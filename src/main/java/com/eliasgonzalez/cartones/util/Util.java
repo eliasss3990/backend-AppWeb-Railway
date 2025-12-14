@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.service;
+package com.eliasgonzalez.cartones.util;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -6,11 +6,11 @@ import org.apache.poi.ss.usermodel.Row;
 
 public class Util {
 
-    protected static String normalize(String s) {
+    public static String normalize(String s) {
         return s == null ? null : s.trim().toLowerCase().replaceAll("\\s+", "");
     }
 
-    protected static boolean isRowEmpty(Row row) {
+    public static boolean isRowEmpty(Row row) {
         for (Cell c : row) {
             if (c != null && c.getCellType() != CellType.BLANK) {
                 if (c.getCellType() == CellType.STRING && !c.getStringCellValue().isBlank()) return false;
@@ -71,11 +71,11 @@ public class Util {
         }
     }
 
-    protected static Integer getInicio (Integer finAnterior) {
+    public static Integer getInicio (Integer finAnterior) {
         return finAnterior + 1;
     }
 
-    protected static Integer getFin (Integer inicio, Integer cantidad) {
+    public static Integer getFin (Integer inicio, Integer cantidad) {
 
         return inicio + cantidad - 1;
     }
