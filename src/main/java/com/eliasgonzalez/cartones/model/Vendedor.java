@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -18,5 +19,8 @@ public class Vendedor {
 
     @Column(nullable = false)
     private BigDecimal deuda;
+
+    @Column(nullable = false)
+    private LocalDate fechaSorteo = LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
 
 }
