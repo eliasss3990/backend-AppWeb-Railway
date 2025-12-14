@@ -1,12 +1,15 @@
 package com.eliasgonzalez.cartones.service;
 
+import com.eliasgonzalez.cartones.dto.VendedorExcelDTO;
+import com.eliasgonzalez.cartones.exception.ExcelProcessingException;
 import com.eliasgonzalez.cartones.model.Senete;
 import com.eliasgonzalez.cartones.model.Telebingo;
 import com.eliasgonzalez.cartones.model.Vendedor;
 import com.eliasgonzalez.cartones.repository.SeneteRepository;
 import com.eliasgonzalez.cartones.repository.TelebingoRepository;
 import com.eliasgonzalez.cartones.repository.VendedorRepository;
-import com.eliasgonzalez.cartones.exception.ExcelProcessingException;
+import com.eliasgonzalez.cartones.util.Util;
+import com.eliasgonzalez.cartones.validation.ExcelValidationService;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servicio encargado de la orquestación (I/O) y persistencia de datos
+ * desde un archivo Excel, delegando la validación a ExcelValidationService.
+ */
 @Service
 @AllArgsConstructor
 public class ExcelService {
@@ -28,21 +35,27 @@ public class ExcelService {
     private final VendedorRepository vendedorRepo;
     private final TelebingoRepository telebingoRepo;
     private final SeneteRepository seneteRepo;
+    private final ExcelValidationService validationService; // Inyección de la lógica de validación
 
     @Transactional
     public void leerExcel(MultipartFile file) {
 
-        List<String> errores = new ArrayList<>();
+        List<String> erroresGlobales = new ArrayList<>();
         int filaActual = 1;
 
         try (InputStream is = file.getInputStream();
              Workbook wb = WorkbookFactory.create(is)) {
 
-            Sheet sheet = wb.getSheetAt(wb.getSheetIndex(ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue()));
+            // --- Configuración Inicial ---
+            int sheetIndex = wb.getSheetIndex(ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue());
+            if (sheetIndex < 0) {
+                throw new ExcelProcessingException("La hoja de cálculo esperada ('" + ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue() + "') no fue encontrada.", List.of());
+            }
+            Sheet sheet = wb.getSheetAt(sheetIndex);
             Iterator<Row> rows = sheet.iterator();
             if (!rows.hasNext()) return;
 
-            // Leer encabezado y mapear nombres normalizados a índices
+            // Mapeo de encabezados
             Row header = rows.next();
             Map<String, Integer> idx = new HashMap<>();
             for (Cell c : header) {
@@ -50,113 +63,79 @@ public class ExcelService {
                 if (name != null) idx.put(Util.normalize(name), c.getColumnIndex());
             }
 
-            // --- INICIO DE LECTURA DE DATOS ---
+            // --- INICIO DE LECTURA DE DATOS Y PROCESAMIENTO ---
             while (rows.hasNext()) {
                 filaActual++;
+                Row r = rows.next();
+                if (Util.isRowEmpty(r)) continue;
 
                 try {
-                    Row r = rows.next();
-                    if (Util.isRowEmpty(r)) continue;
+                    // 1. LECTURA y MAPEO al DTO Intermedio
+                    VendedorExcelDTO dto = new VendedorExcelDTO(
+                            filaActual,
+                            Util.getStringCell(r, idx.get(ExcelEnum.VENDEDOR.getValue())),
+                            Util.getStringCell(r, idx.get(ExcelEnum.SALDO.getValue())),
+                            Util.getIntCell(r, idx.get(ExcelEnum.CANT_SENETE.getValue())),
+                            Util.getIntCell(r, idx.get(ExcelEnum.RESULT_SENETE.getValue())),
+                            Util.getIntCell(r, idx.get(ExcelEnum.CANT_TELEBINGO.getValue())),
+                            Util.getIntCell(r, idx.get(ExcelEnum.RESULT_TELEBINGO.getValue()))
+                    );
 
-                    // ----------------------------------------
-                    // VALIDACIÓN DE NULIDAD PARA VENDEDOR
-                    // ----------------------------------------
+                    // 2. DELEGAR LA VALIDACIÓN
+                    List<String> erroresFila = validationService.validate(dto);
 
-                    String nombre = Util.getStringCell(r, idx.get(ExcelEnum.VENDEDOR.getValue()));
-                    if (nombre == null || nombre.isBlank()) {
-                        errores.add(String.format("Fila %d: El NOMBRE del vendedor no puede estar vacío.", filaActual));
-                        continue; // Saltar la fila si falta el nombre
+                    if (!erroresFila.isEmpty()) {
+                        erroresGlobales.addAll(erroresFila);
+                        continue; // Si falla, salta a la siguiente fila
                     }
 
-                    String deudaStr = Util.getStringCell(r, idx.get(ExcelEnum.SALDO.getValue()));
-                    BigDecimal deuda;
+                    // 3. PERSISTENCIA (Solo si la validación pasó)
 
-                    try {
-                        // Si la celda está vacía se la considera como 0, pero si tiene texto inválido, falla.
-                        deuda = (deudaStr == null || deudaStr.isBlank()) ?
-                                BigDecimal.ZERO : new BigDecimal(deudaStr.trim());
-                    } catch (NumberFormatException e) {
-                        errores.add(String.format("Fila %d: El campo SALDO ('%s') no es un número válido.", filaActual, deudaStr));
-                        continue; // Saltar la fila si el formato es incorrecto
-                    }
+                    // La validación garantiza que deudaStr es numérico si no está vacío.
+                    BigDecimal deuda = (dto.getDeudaStr() == null || dto.getDeudaStr().isBlank()) ?
+                            BigDecimal.ZERO : new BigDecimal(dto.getDeudaStr().trim());
 
-                    // --- CREACIÓN Y GUARDADO DE VENDEDOR ---
                     Vendedor v = new Vendedor();
-                    v.setNombre(nombre);
+                    v.setNombre(dto.getNombre());
                     v.setDeuda(deuda);
                     Vendedor savedV = vendedorRepo.save(v);
 
-
-                    // ----------------------------------------
-                    // VALIDACIÓN DE NULIDAD PARA SENETE (Si existe el registro)
-                    // ----------------------------------------
-                    Integer cantidadSenete = Util.getIntCell(r, idx.get(ExcelEnum.CANT_SENETE.getValue()));
-                    Integer resultadoSenete = Util.getIntCell(r, idx.get(ExcelEnum.RESULT_SENETE.getValue()));
-
-                    // Solo intentar guardar si al menos uno de los campos de Senete existe.
-                    if (cantidadSenete != null || resultadoSenete != null) {
-                        if (cantidadSenete == null) {
-                            errores.add(String.format("Fila %d: Falta CANT_SENETE. Si hay datos de Senete, la cantidad es obligatoria.", filaActual));
-                            // NOTA: Podrías usar 'continue' aquí si quieres que la fila entera falle.
-                            // Aquí solo se registra el error, pero se guarda Telebingo si existe.
-                        }
-                        if (resultadoSenete == null) {
-                            errores.add(String.format("Fila %d: Falta RESULT_SENETE. Si hay datos de Senete, el resultado es obligatorio.", filaActual));
-                        }
-
-                        // Solo guardar si ambos campos son válidos y no nulos
-                        if (cantidadSenete != null && resultadoSenete != null) {
-                            Senete s = new Senete();
-                            s.setVendedor(savedV);
-                            s.setCantidadSenete(cantidadSenete);
-                            s.setResultadoSenete(resultadoSenete);
-                            seneteRepo.save(s);
-                        }
+                    // Guardado condicional de Senete (la validación asegura que ambos campos existen si hay datos)
+                    if (dto.getCantidadSenete() != null && dto.getResultadoSenete() != null) {
+                        Senete s = new Senete();
+                        s.setVendedor(savedV);
+                        s.setCantidadSenete(dto.getCantidadSenete());
+                        s.setResultadoSenete(dto.getResultadoSenete());
+                        seneteRepo.save(s);
                     }
 
-                    // ----------------------------------------
-                    // VALIDACIÓN DE NULIDAD PARA TELEBINGO (Si existe el registro)
-                    // ----------------------------------------
-                    Integer cantidadTelebingo = Util.getIntCell(r, idx.get(ExcelEnum.CANT_TELEBINGO.getValue()));
-                    Integer resultadoTelebingo = Util.getIntCell(r, idx.get(ExcelEnum.RESULT_TELEBINGO.getValue()));
-
-                    if (cantidadTelebingo != null || resultadoTelebingo != null) {
-                        if (cantidadTelebingo == null) {
-                            errores.add(String.format("Fila %d: Falta CANT_TELEBINGO. Si hay datos de Telebingo, la cantidad es obligatoria.", filaActual));
-                        }
-                        if (resultadoTelebingo == null) {
-                            errores.add(String.format("Fila %d: Falta RESULT_TELEBINGO. Si hay datos de Telebingo, el resultado es obligatorio.", filaActual));
-                        }
-
-                        if (cantidadTelebingo != null && resultadoTelebingo != null) {
-                            Telebingo t = new Telebingo();
-                            t.setVendedor(savedV);
-                            t.setCantidadTelebingo(cantidadTelebingo);
-                            t.setResultadoTelebingo(resultadoTelebingo);
-                            telebingoRepo.save(t);
-                        }
+                    // Guardado condicional de Telebingo
+                    if (dto.getCantidadTelebingo() != null && dto.getResultadoTelebingo() != null) {
+                        Telebingo t = new Telebingo();
+                        t.setVendedor(savedV);
+                        t.setCantidadTelebingo(dto.getCantidadTelebingo());
+                        t.setResultadoTelebingo(dto.getResultadoTelebingo());
+                        telebingoRepo.save(t);
                     }
 
                 } catch (Exception e) {
-                    // Captura cualquier error inesperado dentro del procesamiento de una fila
-                    errores.add(String.format("Fila %d: Error inesperado en el procesamiento de la fila. Detalle: %s", filaActual, e.getMessage()));
+                    // Captura errores inesperados (ej. error de BD, error de Hibernate, etc.)
+                    erroresGlobales.add(String.format("Fila %d: ERROR CRÍTICO AL PROCESAR/GUARDAR. Detalle: %s", filaActual, e.getMessage()));
                 }
             }
 
             // --- LANZAMIENTO FINAL DE EXCEPCIÓN ---
-            if (!errores.isEmpty()) {
-                // Si hay errores, lanzamos la excepción de negocio que detiene la transacción
-                // y que el @ControllerAdvice transformará en 422.
-                throw new ExcelProcessingException("El archivo Excel contiene errores de validación.", errores);
+            if (!erroresGlobales.isEmpty()) {
+                // Lanza la excepción de negocio que será capturada por el @ControllerAdvice (422)
+                throw new ExcelProcessingException("El archivo Excel contiene errores de validación. La transacción ha sido revertida.", erroresGlobales);
             }
 
         } catch (ExcelProcessingException e) {
-            // Re-lanzar nuestra excepción de negocio.
+            // Re-lanzar nuestra excepción de negocio específica
             throw e;
         } catch (Exception e) {
-            // Captura errores de IO, problemas con el WorkbookFactory, etc. (Errores del servidor 500)
-            errores.add("Error crítico al procesar el archivo o la estructura de la hoja: " + e.getMessage());
-            throw new RuntimeException("Fallo crítico al procesar el archivo.", e);
+            // Manejo de errores de IO/Workbook (Errores del servidor 500)
+            throw new RuntimeException("Fallo crítico al abrir o procesar el archivo Excel. Verifique si el archivo es un formato válido.", e);
         }
     }
 }
