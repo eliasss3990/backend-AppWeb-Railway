@@ -1,0 +1,58 @@
+### DEPENDENCIAS Y ARTEFACTOS DE BUILD (MAVEN/GRADLE) ###
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+/bin/
+
+# Archivos de la envoltura de Maven
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### ARCHIVOS DE SISTEMA Y LOGS ###
+/logs/
+*.log
+*.tmp
+*.bak
+.DS_Store # Mac OS
+Thumbs.db # Windows
+
+### ARCHIVOS DE CONFIGURACIÓN Y SECRETOS ###
+*.env
+.env
+/src/main/resources/*.env
+/src/main/resources/*.key
+/src/main/resources/*.secret
+/src/main/resources/*.properties.local
+/src/main/resources/application-local.properties
+
+# IntelliJ IDEA
+.idea/
+!.idea/encodings.xml
+!.idea/vcs.xml
+!.idea/workspace.xml
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
