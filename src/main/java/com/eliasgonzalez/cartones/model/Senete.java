@@ -17,9 +17,9 @@ public class Senete {
     private Vendedor vendedor;
 
     @Column(nullable = false)
-    private Integer cantidadSenete;
+    private Integer cantidadSenete = 0;
 
     @Column(nullable = false)
-    private Integer resultadoSenete;
+    private Integer resultadoSenete = 0;
 
 }

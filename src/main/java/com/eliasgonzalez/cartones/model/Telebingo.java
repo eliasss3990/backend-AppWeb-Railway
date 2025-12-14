@@ -17,9 +17,9 @@ public class Telebingo {
     private Vendedor vendedor;
 
     @Column(nullable = false)
-    private Integer cantidadTelebingo;
+    private Integer cantidadTelebingo = 0;
 
     @Column(nullable = false)
-    private Integer resultadoTelebingo;
+    private Integer resultadoTelebingo = 0;
 
 }
