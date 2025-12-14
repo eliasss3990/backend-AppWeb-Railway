@@ -21,28 +21,53 @@ public class Util {
         return true;
     }
 
-    protected static String getStringCell(Row row, Integer colIdx) {
+    public static String getStringCell(Row row, Integer colIdx) {
         if (colIdx == null) return null;
         Cell c = row.getCell(colIdx);
         if (c == null) return null;
-        if (c.getCellType() == CellType.STRING) return c.getStringCellValue();
-        if (c.getCellType() == CellType.NUMERIC) return String.valueOf(c.getNumericCellValue());
-        if (c.getCellType() == CellType.BOOLEAN) return String.valueOf(c.getBooleanCellValue());
-        return null;
+
+        return switch (c.getCellType()) {
+            case STRING -> c.getStringCellValue().trim();
+            case NUMERIC -> {
+                // Formatea valores numéricos para evitar ".0" si son enteros
+                if (c.getNumericCellValue() % 1 == 0) {
+                    yield String.valueOf((long) c.getNumericCellValue());
+                } else {
+                    yield String.valueOf(c.getNumericCellValue());
+                }
+            }
+            case BOOLEAN -> String.valueOf(c.getBooleanCellValue());
+            case FORMULA -> {
+                // Intenta evaluar la fórmula si es posible
+                try {
+                    yield c.getStringCellValue().trim(); // Podría fallar si es NUMERIC
+                } catch (IllegalStateException e) {
+                    // Si no es STRING, trata como numérico de fórmula
+                    yield String.valueOf((long) c.getNumericCellValue());
+                }
+            }
+            default -> null; // BLANK, ERROR, etc.
+        };
     }
 
-    protected static Integer getIntCell(Row row, Integer colIdx) {
-        String s = getStringCell(row, colIdx);
-        if (s == null || s.isBlank()) return null;
+    public static Integer getIntCell(Row row, Integer colIdx) {
+        if (colIdx == null) return null;
+        Cell c = row.getCell(colIdx);
+        if (c == null || c.getCellType() == CellType.BLANK) return null;
+
         try {
-            double d = Double.parseDouble(s);
-            return (int) d;
-        } catch (NumberFormatException ex) {
-            try {
-                return Integer.valueOf(s.trim());
-            } catch (NumberFormatException e) {
-                return null;
+            if (c.getCellType() == CellType.NUMERIC) {
+                // Acceso directo y conversión segura a Integer/Long para evitar pérdida de precisión
+                return (int) Math.round(c.getNumericCellValue());
             }
+            // Intenta parsear la cadena si el tipo no es NUMERIC
+            String s = getStringCell(row, colIdx);
+            return s != null && !s.isBlank() ? Integer.parseInt(s.trim()) : null;
+
+        } catch (NumberFormatException e) {
+            // Si falla el parseo de cadena (ej. "12a"), devolvemos null,
+            // que luego será capturado por el ExcelValidationService
+            return null;
         }
     }
 
