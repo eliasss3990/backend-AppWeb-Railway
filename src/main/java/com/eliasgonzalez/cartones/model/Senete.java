@@ -1,16 +1,11 @@
 package com.eliasgonzalez.cartones.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
+@Data
+@Table(name = "SENETE")
 public class Senete {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +16,10 @@ public class Senete {
     @JoinColumn(name = "vendedor_id", nullable = false) // nombre de la FK en la tabla Senete
     private Vendedor vendedor;
 
+    @Column(nullable = false)
     private Integer cantidadSenete;
+
+    @Column(nullable = false)
     private Integer resultadoSenete;
 
 }

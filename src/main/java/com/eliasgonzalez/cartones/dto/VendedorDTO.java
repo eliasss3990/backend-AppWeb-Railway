@@ -1,17 +1,15 @@
 package com.eliasgonzalez.cartones.dto;
 
+import com.eliasgonzalez.cartones.model.Senete;
+import com.eliasgonzalez.cartones.model.Telebingo;
+import com.eliasgonzalez.cartones.model.Vendedor;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.math.BigDecimal;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter @Setter
 public class VendedorDTO {
-
-    private String nombre;
-    private BigDecimal deuda;
+    private Vendedor vendedor;
+    private Senete senete;
+    private Telebingo telebingo;
 }
