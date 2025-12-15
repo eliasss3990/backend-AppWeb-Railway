@@ -1,15 +1,14 @@
-package com.eliasgonzalez.cartones.service;
+package com.eliasgonzalez.cartones.excel;
 
-import com.eliasgonzalez.cartones.dto.VendedorExcelDTO;
-import com.eliasgonzalez.cartones.exception.ExcelProcessingException;
-import com.eliasgonzalez.cartones.model.Senete;
-import com.eliasgonzalez.cartones.model.Telebingo;
-import com.eliasgonzalez.cartones.model.Vendedor;
-import com.eliasgonzalez.cartones.repository.SeneteRepository;
-import com.eliasgonzalez.cartones.repository.TelebingoRepository;
-import com.eliasgonzalez.cartones.repository.VendedorRepository;
-import com.eliasgonzalez.cartones.util.Util;
-import com.eliasgonzalez.cartones.validation.ExcelValidationService;
+import com.eliasgonzalez.cartones.vendedor.VendedorExcelDTO;
+import com.eliasgonzalez.cartones.shared.exception.ExcelProcessingException;
+import com.eliasgonzalez.cartones.bingo.Senete;
+import com.eliasgonzalez.cartones.bingo.Telebingo;
+import com.eliasgonzalez.cartones.vendedor.Vendedor;
+import com.eliasgonzalez.cartones.bingo.SeneteRepository;
+import com.eliasgonzalez.cartones.bingo.TelebingoRepository;
+import com.eliasgonzalez.cartones.vendedor.VendedorRepository;
+import com.eliasgonzalez.cartones.shared.util.Util;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;

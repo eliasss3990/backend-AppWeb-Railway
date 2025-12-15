@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.service;
+package com.eliasgonzalez.cartones.excel;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

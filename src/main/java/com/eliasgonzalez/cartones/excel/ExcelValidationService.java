@@ -1,6 +1,6 @@
-package com.eliasgonzalez.cartones.validation;
+package com.eliasgonzalez.cartones.excel;
 
-import com.eliasgonzalez.cartones.dto.VendedorExcelDTO;
+import com.eliasgonzalez.cartones.vendedor.VendedorExcelDTO;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

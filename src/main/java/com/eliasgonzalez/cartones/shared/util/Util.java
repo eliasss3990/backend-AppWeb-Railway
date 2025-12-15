@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.util;
+package com.eliasgonzalez.cartones.shared.util;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;

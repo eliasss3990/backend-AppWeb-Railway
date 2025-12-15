@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.dto.error;
+package com.eliasgonzalez.cartones.shared.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

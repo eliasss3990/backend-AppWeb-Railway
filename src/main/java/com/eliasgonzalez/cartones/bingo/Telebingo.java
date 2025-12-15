@@ -1,5 +1,6 @@
-package com.eliasgonzalez.cartones.model;
+package com.eliasgonzalez.cartones.bingo;
 
+import com.eliasgonzalez.cartones.vendedor.Vendedor;
 import jakarta.persistence.*;
 import lombok.*;
 

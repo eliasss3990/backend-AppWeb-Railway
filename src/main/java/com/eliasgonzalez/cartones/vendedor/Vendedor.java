@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.model;
+package com.eliasgonzalez.cartones.vendedor;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,7 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter @Setter
 @Table(name = "VENDEDORES")
 public class Vendedor {
     @Id

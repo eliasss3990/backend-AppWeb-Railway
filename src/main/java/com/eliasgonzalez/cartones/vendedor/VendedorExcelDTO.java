@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.dto;
+package com.eliasgonzalez.cartones.vendedor;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

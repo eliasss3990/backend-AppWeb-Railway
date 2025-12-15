@@ -1,6 +1,6 @@
-package com.eliasgonzalez.cartones.repository;
+package com.eliasgonzalez.cartones.bingo;
 
-import com.eliasgonzalez.cartones.model.Senete;
+import com.eliasgonzalez.cartones.vendedor.Vendedor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

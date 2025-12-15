@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.exception;
+package com.eliasgonzalez.cartones.shared.exception;
 
 import lombok.Getter;
 
