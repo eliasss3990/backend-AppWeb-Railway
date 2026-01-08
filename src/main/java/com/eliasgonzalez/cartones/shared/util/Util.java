@@ -1,24 +1,38 @@
 package com.eliasgonzalez.cartones.shared.util;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 
+import java.util.UUID;
+
+@AllArgsConstructor
+@Builder
 public class Util {
+
+    private String procesoId;
+
+    public String getProcesoId (){
+        return UUID.randomUUID().toString();
+    }
 
     public static String normalize(String s) {
         return s == null ? null : s.trim().toLowerCase().replaceAll("\\s+", "");
     }
 
     public static boolean isRowEmpty(Row row) {
-        for (Cell c : row) {
-            if (c != null && c.getCellType() != CellType.BLANK) {
-                if (c.getCellType() == CellType.STRING && !c.getStringCellValue().isBlank()) return false;
-                if (c.getCellType() == CellType.NUMERIC) return false;
-                if (c.getCellType() == CellType.BOOLEAN) return false;
-            }
+        int indexNombreVendedor = 0; // Verificamos solo esta columna, ya que las demás si pueden estar nulas o vacías
+        Cell c = row.getCell(indexNombreVendedor);
+        if (c != null && c.getCellType() != CellType.BLANK) {
+            if (c.getCellType() == CellType.STRING && !c.getStringCellValue().isBlank()) return false;
+            if (c.getCellType() == CellType.NUMERIC) return false;
+            if (c.getCellType() == CellType.BOOLEAN) return false;
+            if (c.getCellType() == CellType.FORMULA) return false;
+            if (c.getCellType() == CellType.ERROR) return true; // Celdas con error se consideran vacías
         }
-        return true;
+        return true; // BLANK, _NONE u otros casos
     }
 
     public static String getStringCell(Row row, Integer colIdx) {

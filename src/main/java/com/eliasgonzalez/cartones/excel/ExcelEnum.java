@@ -3,6 +3,10 @@ package com.eliasgonzalez.cartones.excel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Enum para representar los datos del archivo Excel.
+ * No es necesario que los nombres estén exactamente igual que en el excel, en términos de mayúsculas y minúsculas.
+ */
 @Getter
 @AllArgsConstructor
 public enum ExcelEnum {

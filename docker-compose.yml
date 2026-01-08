@@ -26,9 +26,7 @@ services:
   # 2. SERVICIO DEL BACKEND (SPRING BOOT)
   # ----------------------------------------
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: cartones_backend
     restart: always
     ports:

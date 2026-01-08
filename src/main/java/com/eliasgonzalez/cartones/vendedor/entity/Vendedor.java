@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.vendedor;
+package com.eliasgonzalez.cartones.vendedor.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,6 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Getter @Setter
 @Table(name = "VENDEDORES")
+@Builder
 public class Vendedor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,10 +20,22 @@ public class Vendedor {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(nullable = false)
-    private BigDecimal deuda;
+    @Builder.Default
+    private Integer cantidadSenete = 0;
 
-    @Column(nullable = false)
+    @Builder.Default
+    private Integer resultadoSenete = 0;
+
+    @Builder.Default
+    private Integer cantidadTelebingo = 0;
+
+    @Builder.Default
+    private Integer resultadoTelebingo = 0;
+
+    @Builder.Default
+    private BigDecimal deuda = BigDecimal.ZERO;
+
+    @Builder.Default
     private LocalDate fechaSorteo = LocalDate.now().with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
 
 }

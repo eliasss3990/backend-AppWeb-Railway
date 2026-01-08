@@ -1,15 +1,13 @@
-package com.eliasgonzalez.cartones.vendedor;
+package com.eliasgonzalez.cartones.vendedor.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * DTO intermedio para transportar los datos leídos de una fila de Excel.
  */
-@Getter
-@Setter
+@Getter @Setter
 @AllArgsConstructor
+@Builder
 public class VendedorExcelDTO {
 
     // Información de seguimiento para errores
@@ -17,7 +15,7 @@ public class VendedorExcelDTO {
 
     // Datos del Vendedor
     private final String nombre;
-    private final String deudaStr;
+    private final String deudaStr; // Deuda como String para validación posterior
 
     // Datos de Senete
     private final Integer cantidadSenete;
