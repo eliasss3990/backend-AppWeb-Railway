@@ -25,16 +25,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, status);
     }
 
-    // Manejador específico para las posibles excepciones para InvalidFileTypeException
-    @ExceptionHandler(InvalidFileTypeException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidFileTypeException(InvalidFileTypeException ex){
+    // Manejador específico para las posibles excepciones para FileProcessingException
+    @ExceptionHandler(FileProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleFileProcessingException(FileProcessingException ex){
 
         HttpStatus status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
         ErrorResponse response = ErrorResponse
                 .builder()
                 .status(status.value())
-                .error("Formato de archivo no admitido.")
+                .error("Error")
                 .message(ex.getMessage())
                 .details(ex.getErrorDetails())
                 .build();

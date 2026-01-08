@@ -2,7 +2,7 @@ package com.eliasgonzalez.cartones.excel.service;
 
 import com.eliasgonzalez.cartones.excel.enums.ExcelEnum;
 import com.eliasgonzalez.cartones.excel.interfaces.IExcelService;
-import com.eliasgonzalez.cartones.shared.exception.InvalidFileTypeException;
+import com.eliasgonzalez.cartones.shared.exception.FileProcessingException;
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorExcelDTO;
 import com.eliasgonzalez.cartones.shared.exception.ExcelProcessingException;
 import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
@@ -115,7 +115,7 @@ public class ExcelService implements IExcelService {
                 logger.info("Se han guardado exitosamente {} registros.", vendedoresParaGuardar.size());
             }
 
-        } catch (ExcelProcessingException | InvalidFileTypeException e) {
+        } catch (ExcelProcessingException | FileProcessingException e) {
             throw e; // Relanzar para que el GlobalExceptionHandler lo maneje
         } catch (Exception e) {
             logger.error("Fallo crítico en el procesamiento del Excel", e);
