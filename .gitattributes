@@ -1,0 +1,6 @@
+# Forzar a Git a normalizar todo a LF (Linux)
+* text=auto eol=lf
+
+# Forzar explícitamente scripts de shell para que nunca fallen
+*.sh text eol=lf
+*.bash text eol=lf
