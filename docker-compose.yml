@@ -26,10 +26,14 @@ services:
   # 2. SERVICIO DEL BACKEND (SPRING BOOT)
   # ----------------------------------------
   backend:
-    build: .
+    build:
+      context: .
+      args:
+        - PORT_BACKEND=${PORT_BACKEND}
     container_name: cartones_backend
     restart: always
     environment:
+      SERVER_PORT: ${PORT_BACKEND}
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}

@@ -21,14 +21,13 @@ RUN mvn package -DskipTests
 # USAMOS UNA IMAGEN BASE LIGERA PARA LA EJECUCIÓN (Etapa Runtime)
 FROM eclipse-temurin:21-jre-alpine
 
-# Argumento para especificar la ubicación del JAR
-ARG JAR_FILE=/app/target/*.jar
-
 # Copiamos el JAR compilado desde la etapa 'build'
-COPY --from=build ${JAR_FILE} app.jar
+COPY --from=build /app/target/*.jar app.jar
 
 # Define el puerto que expone la aplicación Spring Boot
-EXPOSE 8080
+ARG PORT_BACKEND
+
+EXPOSE ${PORT_BACKEND}
 
 # Comando para ejecutar el JAR al iniciar el contenedor
 ENTRYPOINT ["java", "-jar", "app.jar"]
