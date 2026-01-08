@@ -22,7 +22,6 @@ Thumbs.db # Windows
 
 ### ARCHIVOS DE CONFIGURACIÓN Y SECRETOS ###
 *.env
-.env.example
 /src/main/resources/*.env
 /src/main/resources/*.key
 /src/main/resources/*.secret
