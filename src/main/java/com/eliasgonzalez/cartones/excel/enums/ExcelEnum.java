@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.excel;
+package com.eliasgonzalez.cartones.excel.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

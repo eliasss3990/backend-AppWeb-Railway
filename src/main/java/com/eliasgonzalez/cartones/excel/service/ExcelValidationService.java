@@ -1,4 +1,4 @@
-package com.eliasgonzalez.cartones.excel;
+package com.eliasgonzalez.cartones.excel.service;
 
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorExcelDTO;
 import lombok.AllArgsConstructor;
