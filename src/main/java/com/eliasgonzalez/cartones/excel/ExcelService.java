@@ -65,7 +65,10 @@ public class ExcelService implements IExcelService {
                 if (name != null) idx.put(Util.normalize(name), c.getColumnIndex());
             }
 
-            // Validar encabezados
+            /*
+             Validar encabezados
+             Fuera del for, ya que solo es necesario validarlo una vez.
+            */
             validateHeader(idx);
 
             // --- 2. LECTURA Y VALIDACIÓN ---

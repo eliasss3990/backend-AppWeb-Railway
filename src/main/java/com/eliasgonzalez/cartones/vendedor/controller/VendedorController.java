@@ -1,6 +1,5 @@
 package com.eliasgonzalez.cartones.vendedor.controller;
 
-import com.eliasgonzalez.cartones.shared.util.Util;
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorResponseDTO;
 import com.eliasgonzalez.cartones.vendedor.interfaces.IVendedorService;
 import org.springframework.beans.factory.annotation.Autowired;

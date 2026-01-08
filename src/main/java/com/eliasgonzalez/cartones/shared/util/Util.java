@@ -85,12 +85,7 @@ public class Util {
         }
     }
 
-    public static Integer getInicio (Integer finAnterior) {
-        return finAnterior + 1;
-    }
+    public static Integer getInicio (Integer finAnterior) { return finAnterior + 1; }
 
-    public static Integer getFin (Integer inicio, Integer cantidad) {
-
-        return inicio + cantidad - 1;
-    }
+    public static Integer getFin (Integer inicio, Integer cantidad) { return inicio + cantidad - 1; }
 }
