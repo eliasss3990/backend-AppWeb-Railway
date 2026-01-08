@@ -23,9 +23,21 @@ public class VendedorController {
         return ResponseEntity.ok(vendedorService.listaVendedores());
     }
 
+    @GetMapping("/validos")
+    public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (){
+
+        return ResponseEntity.ok(vendedorService.listarVendedoresValidos());
+    }
+
+    @DeleteMapping("/deleteAll")
+    public ResponseEntity<Void> eliminarTodosLosVendedores() {
+        vendedorService.eliminarTodosLosVendedores();
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public ResponseEntity<String> cargarVendedoresDesdeExcel(@RequestParam("file") MultipartFile file,
-                                                             @RequestParam("fecha") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaSorteo) {
+                                                             @RequestParam(name = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaSorteo) {
         String procesoIdCreado = vendedorService.iniciarProceso();
 
         vendedorService.procesarExcel(file, fechaSorteo, procesoIdCreado);

@@ -11,6 +11,11 @@ public interface IVendedorService {
     // GET
     List<VendedorResponseDTO> listaVendedores ();
 
+    List<VendedorResponseDTO> listarVendedoresValidos ();
+
+    // DELETE
+    void eliminarTodosLosVendedores ();
+
     // POST
     void procesarExcel(MultipartFile file, LocalDate fechaSorteo, String procesoId);
 
