@@ -110,6 +110,13 @@ public class PdfService implements IPdfService {
                 .toList();
 
         // 2. Revisar solapamientos
+        reviewSolapamientos(validos);
+
+        // Actualizamos la lista en el config con los filtrados y ordenados
+        config.setRangosCortados(validos);
+    }
+
+    public void reviewSolapamientos(List<RangoCortadoDTO> validos){
         for (int i = 0; i < validos.size() - 1; i++) {
             if (validos.get(i).getFin() >= validos.get(i + 1).getInicio()) {
                 throw new PdfCreationException("Validación de Rangos",
@@ -117,7 +124,5 @@ public class PdfService implements IPdfService {
                                 " y " + validos.get(i+1).getInicio() + "-" + validos.get(i+1).getFin() + " se solapan."));
             }
         }
-        // Actualizamos la lista en el config con los filtrados y ordenados
-        config.setRangosCortados(validos);
     }
 }
