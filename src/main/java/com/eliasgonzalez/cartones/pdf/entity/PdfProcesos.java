@@ -16,12 +16,19 @@ public class PdfProcesos {
     private String procesoId;
 
     @Builder.Default
+    @Setter (AccessLevel.NONE)
     private String estado = EstadoEnum.PENDIENTE.getValue();
 
-    @Column
+    @Lob
+    @Column(columnDefinition = "BYTEA")
     private byte[] pdfEtiquetas;
 
-    @Column
+    @Lob
+    @Column(columnDefinition = "BYTEA")
     private byte[] pdfResumen;
+
+    public void setEstado(String estadoEnum) {
+        this.estado = estadoEnum == null ? EstadoEnum.PENDIENTE.getValue() : estadoEnum;
+    }
 
 }
