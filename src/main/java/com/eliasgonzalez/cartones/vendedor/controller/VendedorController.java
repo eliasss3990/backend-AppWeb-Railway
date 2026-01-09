@@ -20,12 +20,12 @@ public class VendedorController {
     private IVendedorService vendedorService;
 
     // TODO: eliminar luego de pruebas
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedores (){
         return ResponseEntity.ok(vendedorService.listaVendedores());
     }
 
-    @GetMapping("/validos")
+    @GetMapping
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (){
         List<VendedorResponseDTO> vendedores = vendedorService.listarVendedoresValidos();
         vendedorService.eliminarTodosLosVendedores();
@@ -38,7 +38,7 @@ public class VendedorController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    @PostMapping(value = "/carga", consumes = "multipart/form-data")
     public ResponseEntity<String> cargarVendedoresDesdeExcel(
             @RequestParam("file") MultipartFile file) {
 
