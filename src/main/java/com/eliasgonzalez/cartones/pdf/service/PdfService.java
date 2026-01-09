@@ -44,6 +44,9 @@ public class PdfService implements IPdfService {
             // 2. Validar lógica de rangos del JSON
             validarYFiltrarRangos(config);
 
+            // Generar y guardar PDFs
+            generarYGuardarPdfs(procesoIdRecibido, config.getFechaSorteo(), pdfProcesos, config);
+
             // 3. Validar Estado: Si existe pero el estado es incorrecto, es un 422
             if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado())) {
                 throw new UnprocessableEntityException(
@@ -78,9 +81,10 @@ public class PdfService implements IPdfService {
         }
     }
 
-    @Override
     @Transactional
-    public void generarYGuardarPdfs(String procesoIdCreado, LocalDate fechaSorteo) {
+    public void generarYGuardarPdfs(String procesoIdRecibido, LocalDate fechaSorteo,
+                                    PdfProcesos pdfProceso, ConfiguracionPdfDTO config) {
+
         // Por ahora, datos de ejemplo
         List<EtiquetaDTO> etiquetasVacias = List.of();
         List<ResumenDTO> resumenVacio = List.of();
@@ -88,13 +92,12 @@ public class PdfService implements IPdfService {
         byte[] etiquetas = pdfEtiquetasService.generarEtiquetas(etiquetasVacias, fechaSorteo.toString());
         byte[] resumen = pdfResumenService.generarResumen(resumenVacio, fechaSorteo.toString());
 
-        pdfProcesosRepo.save(PdfProcesos
-                .builder()
-                .procesoId(procesoIdCreado)
-                .pdfEtiquetas(etiquetas)
-                .pdfResumen(resumen)
-                .estado(EstadoEnum.COMPLETADO.getValue())
-                .build());
+        // Actualizar la entidad con los PDFs generados
+        // Se ejecuta solo si la excepción de arriba no es lanzada
+        pdfProceso.setPdfEtiquetas(etiquetas);
+        pdfProceso.setPdfResumen(resumen);
+        pdfProceso.setEstado(EstadoEnum.COMPLETADO.getValue());
+
     }
 
     private void validarYFiltrarRangos(ConfiguracionPdfDTO config) {
