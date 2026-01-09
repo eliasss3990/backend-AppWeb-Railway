@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum PdfEnum {
+public enum PdfColumnasEnum {
 
     VENDEDOR("vendedor"),
     S_DEL("s_del"),

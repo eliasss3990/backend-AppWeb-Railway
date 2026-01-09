@@ -9,6 +9,7 @@ import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
 @Service
 public class PdfEtiquetasService {
 
+    @Transactional
     public byte[] generarEtiquetas(List<EtiquetaDTO> etiquetas, String fechaPersonalizada) {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream()){
             Document document = new Document(PageSize.A4);

@@ -1,7 +1,7 @@
 package com.eliasgonzalez.cartones.pdf.service;
 
 import com.eliasgonzalez.cartones.pdf.dto.ResumenDTO;
-import com.eliasgonzalez.cartones.pdf.enums.PdfEnum;
+import com.eliasgonzalez.cartones.pdf.enums.PdfColumnasEnum;
 import com.eliasgonzalez.cartones.shared.exception.PdfCreationException;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
@@ -10,6 +10,7 @@ import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
@@ -27,15 +28,16 @@ public class PdfResumenService {
     private static final Map<String, Float> POS_COLUMNAS = new HashMap<>();
 
     static {
-        POS_COLUMNAS.put(PdfEnum.VENDEDOR.getValue(), MARGEN + 15);
-        POS_COLUMNAS.put(PdfEnum.S_DEL.getValue(), MARGEN + 260);
-        POS_COLUMNAS.put(PdfEnum.S_AL.getValue(), MARGEN + 310);
-        POS_COLUMNAS.put(PdfEnum.T_DEL.getValue(), MARGEN + 360);
-        POS_COLUMNAS.put(PdfEnum.T_AL.getValue(), MARGEN + 410);
-        POS_COLUMNAS.put(PdfEnum.CANTIDAD_S.getValue(), MARGEN + 460);
-        POS_COLUMNAS.put(PdfEnum.CANTIDAD_T.getValue(), MARGEN + 510);
+        POS_COLUMNAS.put(PdfColumnasEnum.VENDEDOR.getValue(), MARGEN + 15);
+        POS_COLUMNAS.put(PdfColumnasEnum.S_DEL.getValue(), MARGEN + 260);
+        POS_COLUMNAS.put(PdfColumnasEnum.S_AL.getValue(), MARGEN + 310);
+        POS_COLUMNAS.put(PdfColumnasEnum.T_DEL.getValue(), MARGEN + 360);
+        POS_COLUMNAS.put(PdfColumnasEnum.T_AL.getValue(), MARGEN + 410);
+        POS_COLUMNAS.put(PdfColumnasEnum.CANTIDAD_S.getValue(), MARGEN + 460);
+        POS_COLUMNAS.put(PdfColumnasEnum.CANTIDAD_T.getValue(), MARGEN + 510);
     }
 
+    @Transactional
     public byte[] generarResumen(List<ResumenDTO> vendedores, String fechaPersonalizada) {
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream()){
             Document document = new Document(PageSize.A4);
@@ -68,8 +70,8 @@ public class PdfResumenService {
 
             // --- CÁLCULO DE LÍMITES DE COLUMNA PARA ALINEACIÓN ---
             // Esto se calcula una vez y se usa dentro del bucle
-            float xInicioSenete = POS_COLUMNAS.get(PdfEnum.CANTIDAD_S.getValue());
-            float xInicioTelebingo = POS_COLUMNAS.get(PdfEnum.CANTIDAD_T.getValue());
+            float xInicioSenete = POS_COLUMNAS.get(PdfColumnasEnum.CANTIDAD_S.getValue());
+            float xInicioTelebingo = POS_COLUMNAS.get(PdfColumnasEnum.CANTIDAD_T.getValue());
             float xFinTabla = width - MARGEN;
 
             float anchoColumnaS = xInicioTelebingo - xInicioSenete;
@@ -97,14 +99,14 @@ public class PdfResumenService {
                 cb.setFontAndSize(helvetica, 9);
 
                 // 1. Nombre vendedor
-                cb.setTextMatrix(POS_COLUMNAS.get(PdfEnum.VENDEDOR.getValue()), y);
+                cb.setTextMatrix(POS_COLUMNAS.get(PdfColumnasEnum.VENDEDOR.getValue()), y);
                 cb.showText(row.nombre != null ? row.nombre : "");
 
                 // 2. Datos Rangos (Alineados manualmente como en el original)
-                cb.showTextAligned(Element.ALIGN_RIGHT, row.seneteDel, POS_COLUMNAS.get(PdfEnum.S_DEL.getValue()) + 15, y, 0);
-                cb.showTextAligned(Element.ALIGN_RIGHT, row.seneteAl, POS_COLUMNAS.get(PdfEnum.S_AL.getValue()) + 15, y, 0);
-                cb.showTextAligned(Element.ALIGN_RIGHT, row.telebingoDel, POS_COLUMNAS.get(PdfEnum.T_DEL.getValue()) + 15, y, 0);
-                cb.showTextAligned(Element.ALIGN_RIGHT, row.telebingoAl, POS_COLUMNAS.get(PdfEnum.T_AL.getValue()) + 15, y, 0);
+                cb.showTextAligned(Element.ALIGN_RIGHT, row.seneteDel, POS_COLUMNAS.get(PdfColumnasEnum.S_DEL.getValue()) + 15, y, 0);
+                cb.showTextAligned(Element.ALIGN_RIGHT, row.seneteAl, POS_COLUMNAS.get(PdfColumnasEnum.S_AL.getValue()) + 15, y, 0);
+                cb.showTextAligned(Element.ALIGN_RIGHT, row.telebingoDel, POS_COLUMNAS.get(PdfColumnasEnum.T_DEL.getValue()) + 15, y, 0);
+                cb.showTextAligned(Element.ALIGN_RIGHT, row.telebingoAl, POS_COLUMNAS.get(PdfColumnasEnum.T_AL.getValue()) + 15, y, 0);
 
                 // 3. Cantidades (Usando la alineación dinámica calculada)
                 cb.showTextAligned(Element.ALIGN_RIGHT, String.valueOf(row.cantidadSenete), xDataSenete, y, 0);
@@ -235,12 +237,12 @@ public class PdfResumenService {
         cb.beginText();
         cb.setFontAndSize(font, 10);
 
-        cb.setTextMatrix(POS_COLUMNAS.get(PdfEnum.VENDEDOR.getValue()), y - 15);
-        cb.showText(PdfEnum.VENDEDOR.getValue().toUpperCase());
+        cb.setTextMatrix(POS_COLUMNAS.get(PdfColumnasEnum.VENDEDOR.getValue()), y - 15);
+        cb.showText(PdfColumnasEnum.VENDEDOR.getValue().toUpperCase());
 
         // --- LÓGICA DE CENTRADO DINÁMICO ---
-        float xInicioSenete = POS_COLUMNAS.get(PdfEnum.CANTIDAD_S.getValue());
-        float xInicioTelebingo = POS_COLUMNAS.get(PdfEnum.CANTIDAD_T.getValue());
+        float xInicioSenete = POS_COLUMNAS.get(PdfColumnasEnum.CANTIDAD_S.getValue());
+        float xInicioTelebingo = POS_COLUMNAS.get(PdfColumnasEnum.CANTIDAD_T.getValue());
         float xFinTabla = width - MARGEN;
 
         // Anchos de columna
@@ -256,12 +258,12 @@ public class PdfResumenService {
         cb.showTextAligned(Element.ALIGN_CENTER, "TELEBINGO", centroT, y - 15, 0);
 
         // Encabezados RANGOS (Del/Al)
-        float xSDel = POS_COLUMNAS.get(PdfEnum.S_DEL.getValue());
-        float xSAl = POS_COLUMNAS.get(PdfEnum.S_AL.getValue());
+        float xSDel = POS_COLUMNAS.get(PdfColumnasEnum.S_DEL.getValue());
+        float xSAl = POS_COLUMNAS.get(PdfColumnasEnum.S_AL.getValue());
         float centerSeneteGroup = (xSDel + xSAl) / 2; // Centro del grupo Seneté Rangos
 
-        float xTDel = POS_COLUMNAS.get(PdfEnum.T_DEL.getValue());
-        float xTAl = POS_COLUMNAS.get(PdfEnum.T_AL.getValue());
+        float xTDel = POS_COLUMNAS.get(PdfColumnasEnum.T_DEL.getValue());
+        float xTAl = POS_COLUMNAS.get(PdfColumnasEnum.T_AL.getValue());
         float centerTelebingoGroup = (xTDel + xTAl) / 2; // Centro del grupo Telebingo Rangos
 
         cb.showTextAligned(Element.ALIGN_CENTER, "SENETÉ", centerSeneteGroup, y - 11, 0);

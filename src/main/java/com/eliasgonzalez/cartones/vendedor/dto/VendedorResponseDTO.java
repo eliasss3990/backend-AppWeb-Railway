@@ -26,4 +26,18 @@ public class VendedorResponseDTO {
     private Integer inicioTelebingo;
     private Integer finTelebingo;
 
+    public String getRangoSenete() {
+        if (inicioSenete == null || finSenete == null || cantidadSenete == null) {
+            return "Datos incompletos";
+        }
+        return String.format("%s-%s (%s)", inicioSenete, finSenete, cantidadSenete);
+    }
+
+    public String getRangoTelebingo() {
+        if (inicioTelebingo == null || finTelebingo == null || cantidadTelebingo == null) {
+            return "Datos incompletos";
+        }
+        return String.format("%s-%s (%s)", inicioTelebingo, finTelebingo, cantidadTelebingo);
+    }
+
 }

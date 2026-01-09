@@ -2,10 +2,10 @@ package com.eliasgonzalez.cartones.shared.util;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.*;
 
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -22,67 +22,84 @@ public class Util {
         return s == null ? null : s.trim().toLowerCase().replaceAll("\\s+", "");
     }
 
-    public static boolean isRowEmpty(Row row) {
-        int indexNombreVendedor = 0; // Verificamos solo esta columna, ya que las demás si pueden estar nulas o vacías
-        Cell c = row.getCell(indexNombreVendedor);
-        if (c != null && c.getCellType() != CellType.BLANK) {
-            if (c.getCellType() == CellType.STRING && !c.getStringCellValue().isBlank()) return false;
-            if (c.getCellType() == CellType.NUMERIC) return false;
-            if (c.getCellType() == CellType.BOOLEAN) return false;
-            if (c.getCellType() == CellType.FORMULA) return false;
-            if (c.getCellType() == CellType.ERROR) return true; // Celdas con error se consideran vacías
-        }
-        return true; // BLANK, _NONE u otros casos
-    }
-
-    public static String getStringCell(Row row, Integer colIdx) {
-        if (colIdx == null) return null;
+    public static boolean isRowEmpty(Row row, Integer colIdx, FormulaEvaluator evaluator) {
+        if (row == null || colIdx == null) return true;
         Cell c = row.getCell(colIdx);
-        if (c == null) return null;
+        if (c == null || c.getCellType() == CellType.BLANK) return true;
 
-        return switch (c.getCellType()) {
-            case STRING -> c.getStringCellValue().trim();
-            case NUMERIC -> {
-                // Formatea valores numéricos para evitar ".0" si son enteros
-                if (c.getNumericCellValue() % 1 == 0) {
-                    yield String.valueOf((long) c.getNumericCellValue());
-                } else {
-                    yield String.valueOf(c.getNumericCellValue());
-                }
-            }
-            case BOOLEAN -> String.valueOf(c.getBooleanCellValue());
-            case FORMULA -> {
-                // Intenta evaluar la fórmula si es posible
-                try {
-                    yield c.getStringCellValue().trim(); // Podría fallar si es NUMERIC
-                } catch (IllegalStateException e) {
-                    // Si no es STRING, trata como numérico de fórmula
-                    yield String.valueOf((long) c.getNumericCellValue());
-                }
-            }
-            default -> null; // BLANK, ERROR, etc.
-        };
+        try {
+            CellValue cellValue = evaluator.evaluate(c);
+            if (cellValue == null) return true;
+
+            return switch (cellValue.getCellType()) {
+                case STRING -> cellValue.getStringValue().trim().isBlank();
+                case NUMERIC -> false;
+                case BOOLEAN -> false;
+                case ERROR -> true; // #REF!, #VALUE! se consideran vacíos/inválidos para saltar o fallar después
+                default -> true;
+            };
+        } catch (Exception e) {
+            // Si el evaluador falla (ej. fórmula no soportada),
+            // NO consideramos la fila vacía para que el validador intente leerla y reporte el error "Fila X: Error..."
+            // en lugar de ignorarla silenciosamente o romper todo.
+            return false;
+        }
     }
 
-    public static Integer getIntCell(Row row, Integer colIdx) {
-        if (colIdx == null) return null;
+    public static String getStringCell(Row row, Integer colIdx, FormulaEvaluator evaluator) {
+        if (colIdx == null || row == null) return null;
         Cell c = row.getCell(colIdx);
         if (c == null || c.getCellType() == CellType.BLANK) return null;
 
         try {
-            if (c.getCellType() == CellType.NUMERIC) {
-                // Acceso directo y conversión segura a Integer/Long para evitar pérdida de precisión
-                return (int) Math.round(c.getNumericCellValue());
-            }
-            // Intenta parsear la cadena si el tipo no es NUMERIC
-            String s = getStringCell(row, colIdx);
-            return s != null && !s.isBlank() ? Integer.parseInt(s.trim()) : null;
+            CellValue cellValue = evaluator.evaluate(c);
+            if (cellValue == null) return null;
 
-        } catch (NumberFormatException e) {
-            // Si falla el parseo de cadena (ej. "12a"), devolvemos null,
-            // que luego será capturado por el ExcelValidationService
+            return switch (cellValue.getCellType()) {
+                case STRING -> cellValue.getStringValue().trim();
+                case NUMERIC -> {
+                    if (DateUtil.isCellDateFormatted(c)) {
+                        // Formateo de fecha
+                        yield new SimpleDateFormat("yyyy/MM/dd").format(c.getDateCellValue());
+                    }
+                    double val = cellValue.getNumberValue();
+                    // BigDecimal para limpiar la conversión de Double a String
+                    if (val == (long) val) {
+                        yield String.valueOf((long) val);
+                    } else {
+                        yield BigDecimal.valueOf(val).toPlainString(); // Evita notación científica 1.5E2
+                    }
+                }
+                case BOOLEAN -> String.valueOf(cellValue.getBooleanValue());
+                case ERROR -> "ERROR_CODIGO_" + cellValue.getErrorValue(); // Retornamos el error para que el validador lo detecte
+                default -> null;
+            };
+        } catch (Exception e) {
+            return "ERROR_FORMULA"; // Retorno seguro en caso de fallo de POI
+        }
+    }
+
+    public static Integer getIntCell(Row row, Integer colIdx, FormulaEvaluator evaluator) {
+        if (colIdx == null || row == null) return null;
+        Cell c = row.getCell(colIdx);
+        if (c == null) return null;
+
+        try {
+            CellValue cellValue = evaluator.evaluate(c);
+            if (cellValue == null || cellValue.getCellType() == CellType.BLANK) return null;
+
+            if (cellValue.getCellType() == CellType.NUMERIC) {
+                return (int) Math.round(cellValue.getNumberValue());
+            }
+
+            // Si el resultado de la fórmula es un String que parece número
+            if (cellValue.getCellType() == CellType.STRING) {
+                return (int) Double.parseDouble(cellValue.getStringValue());
+            }
+        } catch (Exception e) {
             return null;
         }
+        return null;
     }
 
     public static Integer getInicio (Integer finAnterior) { return finAnterior + 1; }

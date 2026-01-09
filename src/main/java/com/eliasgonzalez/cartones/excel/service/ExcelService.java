@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +38,7 @@ public class ExcelService implements IExcelService {
 
     @Override
     @Transactional // Si ocurre una RuntimeException, se revierte todo
-    public void leerExcel(MultipartFile file, LocalDate fechaSorteo) {
+    public void leerExcel(MultipartFile file) {
 
         logger.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
 
@@ -49,7 +48,9 @@ public class ExcelService implements IExcelService {
         try (InputStream is = file.getInputStream();
              Workbook wb = WorkbookFactory.create(is)) {
 
-            // --- 1. CONFIGURACIÓN INICIAL ---
+            // --- 1. CONFIGURACIÓN INICIAL + EVALUADOR ---
+            FormulaEvaluator evaluator = wb.getCreationHelper().createFormulaEvaluator();
+
             int sheetIndex = wb.getSheetIndex(ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue());
             if (sheetIndex < 0) {
                 throw new ExcelProcessingException("La hoja ('" + ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue() + "') no fue encontrada.", List.of());
@@ -73,17 +74,20 @@ public class ExcelService implements IExcelService {
             */
             validateHeader(idx);
 
+            // Buscamos el índice de la columna del vendedor para luego pasarla a isRowEmpty
+            Integer vIdx = idx.get(Util.normalize(ExcelEnum.VENDEDOR.getValue()));
+
             // --- 2. LECTURA Y VALIDACIÓN ---
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 int filaActual = i + 1;
                 Row row = sheet.getRow(i);
 
                 // Si la fila está vacía, se omite y se pasa al siguiente.
-                if (Util.isRowEmpty(row)) continue;
+                if (Util.isRowEmpty(row, vIdx, evaluator)) continue;
 
                 try {
                     // Mapeo al DTO
-                    VendedorExcelDTO dto = DTOExcelMapper(idx, row, filaActual);
+                    VendedorExcelDTO dto = DTOExcelMapper(idx, row, filaActual, evaluator);
 
                     // Delegar validación lógica
                     List<String> erroresFila = validationService.validate(dto);
@@ -92,7 +96,7 @@ public class ExcelService implements IExcelService {
                         erroresGlobales.addAll(erroresFila);
                     } else {
                         // Si la fila es válida, la transformamos en entidad y la guardamos en la lista temporal
-                        vendedoresParaGuardar.add(convertToEntity(dto, fechaSorteo));
+                        vendedoresParaGuardar.add(convertToEntity(dto));
                     }
 
                 } catch (Exception e) {
@@ -141,19 +145,19 @@ public class ExcelService implements IExcelService {
         }
     }
 
-    private static VendedorExcelDTO DTOExcelMapper(Map<String, Integer> idx, Row row, int filaActual) {
+    private static VendedorExcelDTO DTOExcelMapper(Map<String, Integer> idx, Row row, int filaActual, FormulaEvaluator evaluator) {
         return VendedorExcelDTO.builder()
-                .nombre(Util.getStringCell(row, idx.get(Util.normalize(ExcelEnum.VENDEDOR.getValue()))))
-                .deudaStr(Util.getStringCell(row, idx.get(Util.normalize(ExcelEnum.SALDO.getValue()))))
-                .cantidadSenete(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.CANT_SENETE.getValue()))))
-                .resultadoSenete(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.RESULT_SENETE.getValue()))))
-                .cantidadTelebingo(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.CANT_TELEBINGO.getValue()))))
-                .resultadoTelebingo(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.RESULT_TELEBINGO.getValue()))))
+                .nombre(Util.getStringCell(row, idx.get(Util.normalize(ExcelEnum.VENDEDOR.getValue())), evaluator))
+                .deudaStr(Util.getStringCell(row, idx.get(Util.normalize(ExcelEnum.SALDO.getValue())), evaluator))
+                .cantidadSenete(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.CANT_SENETE.getValue())), evaluator))
+                .resultadoSenete(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.RESULT_SENETE.getValue())), evaluator))
+                .cantidadTelebingo(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.CANT_TELEBINGO.getValue())), evaluator))
+                .resultadoTelebingo(Util.getIntCell(row, idx.get(Util.normalize(ExcelEnum.RESULT_TELEBINGO.getValue())), evaluator))
                 .filaActual(filaActual)
                 .build();
     }
 
-    private static Vendedor convertToEntity(VendedorExcelDTO dto, LocalDate fechaSorteo) {
+    private static Vendedor convertToEntity(VendedorExcelDTO dto) {
         String deudaStr = dto.getDeudaStr();
         BigDecimal deuda = (deudaStr == null || deudaStr.isBlank()) ?
                 BigDecimal.ZERO : new BigDecimal(deudaStr.trim());
@@ -167,9 +171,6 @@ public class ExcelService implements IExcelService {
                 .resultadoTelebingo(dto.getResultadoTelebingo())
                 .build();
 
-        if (fechaSorteo != null) {
-            v.setFechaSorteo(fechaSorteo);
-        }
         return v;
     }
 }

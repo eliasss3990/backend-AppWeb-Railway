@@ -59,6 +59,39 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, status);
     }
 
+    // Manejador específico para las posibles excepciones para PdfCreationException
+    @ExceptionHandler(UnprocessableEntityException.class)
+    public ResponseEntity<ErrorResponse> handleUnprocessableEntityException(UnprocessableEntityException ex){
+
+        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
+
+        ErrorResponse response = ErrorResponse
+                .builder()
+                .status(status.value())
+                .error("Estado de recurso inválido")
+                .message(ex.getMessage())
+                .details(ex.getErrorDetails())
+                .build();
+
+        return new ResponseEntity<>(response, status);
+    }
+    // Manejador específico para las posibles excepciones para ResourceNotFoundException
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUnprocessableEntityException(ResourceNotFoundException ex){
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        ErrorResponse response = ErrorResponse
+                .builder()
+                .status(status.value())
+                .error("Recurso no encontrado")
+                .message(ex.getMessage())
+                .details(ex.getErrorDetails())
+                .build();
+
+        return new ResponseEntity<>(response, status);
+    }
+
     // Manejar excepciones generales del servidor
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {

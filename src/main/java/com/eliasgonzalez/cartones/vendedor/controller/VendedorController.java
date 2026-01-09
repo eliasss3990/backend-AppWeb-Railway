@@ -1,5 +1,6 @@
 package com.eliasgonzalez.cartones.vendedor.controller;
 
+import com.eliasgonzalez.cartones.shared.util.Util;
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorResponseDTO;
 import com.eliasgonzalez.cartones.vendedor.interfaces.IVendedorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ public class VendedorController {
     @Autowired
     private IVendedorService vendedorService;
 
+    // TODO: eliminar luego de pruebas
     @GetMapping
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedores (){
         return ResponseEntity.ok(vendedorService.listaVendedores());
@@ -25,8 +27,9 @@ public class VendedorController {
 
     @GetMapping("/validos")
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (){
-
-        return ResponseEntity.ok(vendedorService.listarVendedoresValidos());
+        List<VendedorResponseDTO> vendedores = vendedorService.listarVendedoresValidos();
+        vendedorService.eliminarTodosLosVendedores();
+        return ResponseEntity.ok(vendedores);
     }
 
     @DeleteMapping("/deleteAll")
@@ -36,12 +39,12 @@ public class VendedorController {
     }
 
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    public ResponseEntity<String> cargarVendedoresDesdeExcel(@RequestParam("file") MultipartFile file,
-                                                             @RequestParam(name = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaSorteo) {
+    public ResponseEntity<String> cargarVendedoresDesdeExcel(
+            @RequestParam("file") MultipartFile file) {
+
+
         String procesoIdCreado = vendedorService.iniciarProceso();
-
-        vendedorService.procesarExcel(file, fechaSorteo, procesoIdCreado);
-
+        vendedorService.procesarExcel(file);
 
         return ResponseEntity.ok(procesoIdCreado);
     }
