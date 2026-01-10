@@ -45,7 +45,7 @@ public class PdfService implements IPdfService {
             validarYFiltrarRangos(config);
 
             // Generar y guardar PDFs
-            generarYGuardarPdfs(procesoIdRecibido, config.getFechaSorteo(), pdfProcesos, config);
+            generarYGuardarPdfs(procesoIdRecibido, config.getFechaSorteos(), pdfProcesos, config);
 
             // 3. Validar Estado: Si existe pero el estado es incorrecto, es un 422
             if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado())) {

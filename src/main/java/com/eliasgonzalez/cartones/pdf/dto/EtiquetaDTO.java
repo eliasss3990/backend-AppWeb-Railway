@@ -2,20 +2,23 @@ package com.eliasgonzalez.cartones.pdf.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter @Setter
 @Builder
 public class EtiquetaDTO {
 
-    public int numeroVendedor;
-    public String nombre;
-    public String seneteRango;
-    public String seneteCartones;
-    public String telebingoRango;
-    public String telebingoCartones;
-    public String resultadoSenete;
-    public String resultadoTelebingo;
-    public String saldo;
+    private int numeroVendedor;
+    private String seneteRango;
+    private String nombre;
+    private String seneteCartones;
+    private String telebingoRango;
+    private String telebingoCartones;
+    private String resultadoSenete;
+    private String resultadoTelebingo;
+    private String saldo;
+    private List<String> fechaSorteo;
 
 }

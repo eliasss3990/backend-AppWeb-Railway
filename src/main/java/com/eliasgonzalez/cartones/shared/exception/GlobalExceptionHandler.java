@@ -95,6 +95,8 @@ public class GlobalExceptionHandler {
     // Manejar excepciones generales del servidor
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {
+        System.out.println("\n\n########## ¡ATENCIÓN! EL MANEJADOR DE EXCEPCIONES SE ESTÁ EJECUTANDO. ##########\n\n");
+        ex.printStackTrace(); // <-- AÑADIDO PARA DEBUGGING
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         ErrorResponse response = ErrorResponse
