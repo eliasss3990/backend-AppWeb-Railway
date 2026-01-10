@@ -17,7 +17,7 @@ public interface IVendedorService {
     void eliminarTodosLosVendedores ();
 
     // POST
-    void procesarExcel(MultipartFile file);
+    void procesarExcel(MultipartFile file, String procesoIdCreado);
 
     // Metodo para crear el ProcesoId
     String iniciarProceso ();
