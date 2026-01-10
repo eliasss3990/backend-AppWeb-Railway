@@ -19,17 +19,20 @@ public class ConfiguracionPdfDTO {
     private Integer inicioTelebingoGral;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate fechaSorteo = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY));
+    private List<LocalDate> fechaSorteos = List.of(
+                                                   LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY)),
+                                                   LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY))
+                                           );
 
     private List<RangoCortadoDTO> rangosCortados = new ArrayList<>();
 
     public ConfiguracionPdfDTO() {
     }
 
-    public ConfiguracionPdfDTO(Integer inicioSeneteGral, Integer inicioTelebingoGral, LocalDate fechaSorteo, List<RangoCortadoDTO> rangosCortados) {
+    public ConfiguracionPdfDTO(Integer inicioSeneteGral, Integer inicioTelebingoGral, List<LocalDate> fechaSorteos, List<RangoCortadoDTO> rangosCortados) {
         setInicioSeneteGral(inicioSeneteGral);
         setInicioTelebingoGral(inicioTelebingoGral);
-        setFechaSorteo(fechaSorteo);
+        setFechaSorteos(fechaSorteos);
         setRangosCortados(rangosCortados);
     }
 
@@ -44,8 +47,11 @@ public class ConfiguracionPdfDTO {
     }
 
     @JsonProperty("fechaSorteo")
-    public void setFechaSorteo(LocalDate fechaSorteo) {
-        this.fechaSorteo = fechaSorteo == null ? LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY)) : fechaSorteo;
+    public void setFechaSorteos(List<LocalDate> fechaSorteos) {
+        this.fechaSorteos = fechaSorteos == null ? List.of(
+                                                           LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY)),
+                                                           LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY)))
+                                                   : fechaSorteos;
     }
 
     @JsonProperty("rangosCortados")
