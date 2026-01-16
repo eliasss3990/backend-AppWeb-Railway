@@ -53,7 +53,7 @@ public class PdfEtiquetasService {
                 cb.beginText();
                 cb.setFontAndSize(helveticaBold, 24);
                 cb.setTextMatrix(width - margen - 45, y + altoEtiqueta - 245); // Ajuste manual de coordenadas
-                cb.showText("#" + item.numeroVendedor);
+                cb.showText("#" + item.getNumeroVendedor());
                 cb.endText();
 
                 // Encabezado
@@ -81,7 +81,7 @@ public class PdfEtiquetasService {
                 // Nombre del vendedor (Centrado)
                 cb.beginText();
                 cb.setFontAndSize(helveticaBold, 16);
-                String nombreMostrar = item.nombre != null ? item.nombre.toUpperCase() : "";
+                String nombreMostrar = item.getNombre() != null ? item.getNombre().toUpperCase() : "";
                 cb.showTextAligned(Element.ALIGN_CENTER, nombreMostrar, width / 2, y + altoEtiqueta - 85, 0);
                 cb.endText();
 
@@ -92,7 +92,7 @@ public class PdfEtiquetasService {
                 cb.showText("SENETÉ:");
                 cb.setFontAndSize(helvetica, 11);
                 cb.setTextMatrix(margen + 30, y + altoEtiqueta - 125);
-                cb.showText(item.seneteRango + " (" + item.seneteCartones + " cartones)");
+                cb.showText(item.getSeneteRango() + " (" + item.getSeneteCartones() + " cartones)");
                 cb.endText();
 
                 // Sección TELEBINGO
@@ -102,7 +102,7 @@ public class PdfEtiquetasService {
                 cb.showText("TELEBINGO:");
                 cb.setFontAndSize(helvetica, 11);
                 cb.setTextMatrix(margen + 30 + anchoMitad, y + altoEtiqueta - 125);
-                cb.showText(item.telebingoRango + " (" + item.telebingoCartones + " cartones)");
+                cb.showText(item.getTelebingoRango() + " (" + item.getTelebingoCartones() + " cartones)");
                 cb.endText();
 
                 // Títulos RESULTADOS
@@ -118,9 +118,9 @@ public class PdfEtiquetasService {
                 cb.beginText();
                 cb.setFontAndSize(helvetica, 10);
                 cb.setTextMatrix(margen + 30, y + altoEtiqueta - 175);
-                cb.showText(item.resultadoSenete);
+                cb.showText(item.getResultadoSenete());
                 cb.setTextMatrix(margen + 30 + anchoMitad, y + altoEtiqueta - 175);
-                cb.showText(item.resultadoTelebingo);
+                cb.showText(item.getResultadoTelebingo());
                 cb.endText();
 
                 // SALDO
@@ -130,7 +130,7 @@ public class PdfEtiquetasService {
                 cb.showText("SALDO:");
                 cb.setFontAndSize(helvetica, 11);
                 cb.setTextMatrix(margen + 90, y + altoEtiqueta - 217);
-                cb.showText(item.saldo);
+                cb.showText(item.getSaldo());
                 cb.endText();
 
                 // Paginación: Si es múltiplo de 3 y no es el último elemento

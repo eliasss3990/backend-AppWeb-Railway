@@ -38,7 +38,7 @@ public class ExcelService implements IExcelService {
 
     @Override
     @Transactional // Si ocurre una RuntimeException, se revierte todo
-    public void leerExcel(MultipartFile file) {
+    public void leerExcel(MultipartFile file, String procesoIdCreado) {
 
         logger.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
 
@@ -96,7 +96,7 @@ public class ExcelService implements IExcelService {
                         erroresGlobales.addAll(erroresFila);
                     } else {
                         // Si la fila es válida, la transformamos en entidad y la guardamos en la lista temporal
-                        vendedoresParaGuardar.add(convertToEntity(dto));
+                        vendedoresParaGuardar.add(convertToEntity(dto, procesoIdCreado));
                     }
 
                 } catch (Exception e) {
@@ -157,12 +157,13 @@ public class ExcelService implements IExcelService {
                 .build();
     }
 
-    private static Vendedor convertToEntity(VendedorExcelDTO dto) {
+    private static Vendedor convertToEntity(VendedorExcelDTO dto, String procesoIdCreado) {
         String deudaStr = dto.getDeudaStr();
         BigDecimal deuda = (deudaStr == null || deudaStr.isBlank()) ?
                 BigDecimal.ZERO : new BigDecimal(deudaStr.trim());
 
-        Vendedor v = Vendedor.builder()
+        return Vendedor.builder()
+                .procesoId(procesoIdCreado)
                 .nombre(dto.getNombre().trim())
                 .deuda(deuda)
                 .cantidadSenete(dto.getCantidadSenete())
@@ -170,7 +171,5 @@ public class ExcelService implements IExcelService {
                 .cantidadTelebingo(dto.getCantidadTelebingo())
                 .resultadoTelebingo(dto.getResultadoTelebingo())
                 .build();
-
-        return v;
     }
 }

@@ -9,6 +9,8 @@ import java.util.List;
 
 @Repository
 public interface VendedorRepository extends JpaRepository<Vendedor, Long> {
+
     @Query(value = "SELECT v FROM Vendedor v WHERE v.cantidadSenete > 0 OR v.cantidadTelebingo > 0")
     List<Vendedor> findVendedoresValidos();
+
 }

@@ -1,10 +1,11 @@
 package com.eliasgonzalez.cartones.pdf.interfaces;
 
 import com.eliasgonzalez.cartones.pdf.dto.ConfiguracionPdfDTO;
+import com.eliasgonzalez.cartones.pdf.dto.SimulacionRequestDTO;
 import org.springframework.core.io.Resource;
 
 public interface IPdfService {
 
-    Resource obtenerZipPdfs (String procesoIdRecibido, ConfiguracionPdfDTO config);
+    Resource obtenerZipPdfs (String procesoIdRecibido, SimulacionRequestDTO config);
 
 }

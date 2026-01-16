@@ -1,9 +1,6 @@
 package com.eliasgonzalez.cartones.pdf.service;
 
-import com.eliasgonzalez.cartones.pdf.dto.ConfiguracionPdfDTO;
-import com.eliasgonzalez.cartones.pdf.dto.EtiquetaDTO;
-import com.eliasgonzalez.cartones.pdf.dto.RangoCortadoDTO;
-import com.eliasgonzalez.cartones.pdf.dto.ResumenDTO;
+import com.eliasgonzalez.cartones.pdf.dto.*;
 import com.eliasgonzalez.cartones.pdf.entity.PdfProcesos;
 import com.eliasgonzalez.cartones.pdf.enums.EstadoEnum;
 import com.eliasgonzalez.cartones.pdf.interfaces.IPdfService;
@@ -19,11 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -35,91 +32,102 @@ public class PdfService implements IPdfService {
 
     @Override
     @Transactional
-    public Resource obtenerZipPdfs(String procesoIdRecibido, ConfiguracionPdfDTO config) {
+    public Resource obtenerZipPdfs(String procesoIdRecibido, SimulacionRequestDTO config) {
         try {
-            // 1. Buscar: Si no existe, es un 404 Not Found (o un error de recurso no encontrado)
+            // 1. Buscar Proceso
             PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
                     .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", null));
 
-            // 2. Validar lógica de rangos del JSON
+            // 2. Validar lógica de rangos (Ahora valida ambas listas por separado)
             validarYFiltrarRangos(config);
 
-            // Generar y guardar PDFs
-            generarYGuardarPdfs(procesoIdRecibido, config.getFechaSorteos(), pdfProcesos, config);
+            // 3. Generar y guardar PDFs
+            generarYGuardarPdfs(procesoIdRecibido, pdfProcesos, config);
 
-            // 3. Validar Estado: Si existe pero el estado es incorrecto, es un 422
-            if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado())) {
+            // 4. Validar Estado
+            if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado()) &&
+                    !EstadoEnum.COMPLETADO.getValue().equals(pdfProcesos.getEstado())) { // Agregué COMPLETADO por si se regenera
                 throw new UnprocessableEntityException(
-                        "El proceso no está en estado PENDIENTE.",
-                        List.of("El proceso " + procesoIdRecibido + " tiene un estado " + pdfProcesos.getEstado())
+                        "El estado del proceso no es válido para descarga.",
+                        List.of("Estado actual: " + pdfProcesos.getEstado())
                 );
             }
 
-            // 4. Buscar bytes de PDFs guardados en la base de datos
+            // 5. Recuperar bytes
             byte[] etiquetas = pdfProcesos.getPdfEtiquetas();
             byte[] resumen = pdfProcesos.getPdfResumen();
 
             if (etiquetas == null || resumen == null) {
-                // Si no se encuentran los PDFs, devolvemos un error
-                throw new FileProcessingException("No se encontraron procesos pendientes para: " + procesoIdRecibido, null);
+                throw new FileProcessingException("No se encontraron archivos PDF generados para: " + procesoIdRecibido, null);
             }
 
-            // 5. Preparar Mapa para el ZIP y generarlo
+            // 6. Crear ZIP
             Map<String, byte[]> misPdfs = new HashMap<>();
             misPdfs.put("Imprimir_etiquetas.pdf", etiquetas);
             misPdfs.put("Resumen_entrega.pdf", resumen);
 
-            // Generar ZIP y retornar directamente el Resource
             return ZipService.crearZip(misPdfs);
 
         } catch (IOException e) {
-            // Error específico de entrada/salida de bytes
-            throw new FileProcessingException("Error de E/S al generar el ZIP del proceso: " + procesoIdRecibido, List.of(e.getMessage()));
+            throw new FileProcessingException("Error de E/S al generar el ZIP: " + procesoIdRecibido, List.of(e.getMessage()));
         } catch (Exception e) {
-            // Cualquier otro error (OpenPDF, Nulls, etc.)
+            if (e instanceof RuntimeException) throw (RuntimeException) e; // Relanzar excepciones propias
             throw new FileProcessingException("Error inesperado en la generación de PDF.", List.of(e.getMessage()));
         }
     }
 
     @Transactional
-    public void generarYGuardarPdfs(String procesoIdRecibido, LocalDate fechaSorteo,
-                                    PdfProcesos pdfProceso, ConfiguracionPdfDTO config) {
+    public void generarYGuardarPdfs(String procesoIdRecibido, PdfProcesos pdfProceso, SimulacionRequestDTO config) {
 
-        // Por ahora, datos de ejemplo
+        // AQUI DEBERÍAS LLAMAR A TU DISTRIBUCION SERVICE PARA OBTENER DATOS REALES
+        // Por ahora mantenemos los datos de ejemplo vacíos
         List<EtiquetaDTO> etiquetasVacias = List.of();
         List<ResumenDTO> resumenVacio = List.of();
 
-        byte[] etiquetas = pdfEtiquetasService.generarEtiquetas(etiquetasVacias, fechaSorteo.toString());
-        byte[] resumen = pdfResumenService.generarResumen(resumenVacio, fechaSorteo.toString());
+        // Construimos un string de fechas para pasar al generador (o pasas las fechas sueltas si actualizas ese servicio)
+        String fechasTexto = String.format("Seneté: %s | Telebingo: %s",
+                config.getFechaSorteoSenete(), config.getFechaSorteoTelebingo());
 
-        // Actualizar la entidad con los PDFs generados
-        // Se ejecuta solo si la excepción de arriba no es lanzada
+        byte[] etiquetas = pdfEtiquetasService.generarEtiquetas(etiquetasVacias, fechasTexto);
+        byte[] resumen = pdfResumenService.generarResumen(resumenVacio, fechasTexto);
+
         pdfProceso.setPdfEtiquetas(etiquetas);
         pdfProceso.setPdfResumen(resumen);
         pdfProceso.setEstado(EstadoEnum.COMPLETADO.getValue());
-
     }
 
-    private void validarYFiltrarRangos(ConfiguracionPdfDTO config) {
-        if (config.getRangosCortados() == null) return;
+    private void validarYFiltrarRangos(SimulacionRequestDTO config) {
+        // Validar y limpiar Pool Seneté
+        if (config.getPoolSenete() != null && !config.getPoolSenete().isEmpty()) {
+            config.setPoolSenete(procesarListaRangos(config.getPoolSenete(), "Seneté"));
+        }
 
-        // 1. Filtrar los que son 0-0 o inválidos
-        List<RangoCortadoDTO> validos = config.getRangosCortados().stream()
+        // Validar y limpiar Pool Telebingo
+        if (config.getPoolTelebingo() != null && !config.getPoolTelebingo().isEmpty()) {
+            config.setPoolTelebingo(procesarListaRangos(config.getPoolTelebingo(), "Telebingo"));
+        }
+    }
+
+    /**
+     * Método auxiliar para filtrar inválidos, ordenar y verificar solapamientos
+     */
+    private List<RangoCortadoDTO> procesarListaRangos(List<RangoCortadoDTO> rangos, String nombreJuego) {
+        // 1. Filtrar los que son 0-0 o inválidos y Ordenar
+        List<RangoCortadoDTO> validos = rangos.stream()
                 .filter(r -> r.getInicio() > 0 && r.getFin() > 0 && r.getInicio() <= r.getFin())
                 .sorted(Comparator.comparingInt(RangoCortadoDTO::getInicio))
-                .toList();
+                .collect(Collectors.toList());
 
         // 2. Revisar solapamientos
-        reviewSolapamientos(validos);
+        reviewSolapamientos(validos, nombreJuego);
 
-        // Actualizamos la lista en el config con los filtrados y ordenados
-        config.setRangosCortados(validos);
+        return validos;
     }
 
-    public void reviewSolapamientos(List<RangoCortadoDTO> validos){
+    public void reviewSolapamientos(List<RangoCortadoDTO> validos, String nombreJuego) {
         for (int i = 0; i < validos.size() - 1; i++) {
             if (validos.get(i).getFin() >= validos.get(i + 1).getInicio()) {
-                throw new PdfCreationException("Validación de Rangos",
+                throw new PdfCreationException("Validación de Rangos (" + nombreJuego + ")",
                         List.of("Los rangos " + validos.get(i).getInicio() + "-" + validos.get(i).getFin() +
                                 " y " + validos.get(i+1).getInicio() + "-" + validos.get(i+1).getFin() + " se solapan."));
             }

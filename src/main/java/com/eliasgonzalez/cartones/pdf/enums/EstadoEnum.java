@@ -1,5 +1,6 @@
 package com.eliasgonzalez.cartones.pdf.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,8 +9,9 @@ import lombok.Getter;
 public enum EstadoEnum {
 
     PENDIENTE("pendiente"),
-    COMPLETADO("completado"),
-    ERROR("error");
+    VERIFICANDO("verificando"),
+    COMPLETADO("completado");
 
+    @JsonValue
     private final String value;
 }
