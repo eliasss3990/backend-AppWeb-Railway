@@ -12,21 +12,22 @@ import java.util.stream.Collectors;
 @Transactional
 public class DistribucionService {
 
-    // Margen de seguridad
-    private static final int MARGEN_SEGURIDAD = 100;
+    // Margen amplio para permitir saltos grandes si el pool se genera automáticamente
+    private static final int MARGEN_SEGURIDAD = 20000;
 
-    public List<VendedorSimuladoDTO> simularDistribucion (SimulacionRequestDTO request) {
+    public List<VendedorSimuladoDTO> simularDistribucion(SimulacionRequestDTO request) {
 
         validarConfiguracion(request);
 
-        // 1. CALCULAR DEMANDA TOTAL (Para ajustar el horizonte infinito)
+        // 1. CALCULAR DEMANDA
         int demandaTotalSenete = request.getVendedores().stream()
                 .mapToInt(v -> v.getCantidadSenete() == null ? 0 : v.getCantidadSenete()).sum();
 
         int demandaTotalTelebingo = request.getVendedores().stream()
                 .mapToInt(v -> v.getCantidadTelebingo() == null ? 0 : v.getCantidadTelebingo()).sum();
 
-        // 2. CONVERTIR POOLS (Pasamos la demanda)
+        // 2. CONVERTIR POOLS (Pilas de papel)
+        // Nota: Creamos pools grandes para soportar el desperdicio "ilimitado"
         LinkedList<RangoLogico> poolSenete = convertirPool(
                 request.getPoolSenete(), request.getInicioSeneteGral(), demandaTotalSenete
         );
@@ -35,15 +36,22 @@ public class DistribucionService {
                 request.getPoolTelebingo(), request.getInicioTelebingoGral(), demandaTotalTelebingo
         );
 
-        // 3. MAPAS DE RESULTADOS
+        // 3. MEZCLA ÚNICA (Orden Sagrado)
+        List<VendedorInputDTO> vendedoresOrdenados = new ArrayList<>(request.getVendedores());
+        if (request.isMezclar()) {
+            Collections.shuffle(vendedoresOrdenados);
+        }
+
+        // 4. MAPAS DE RESULTADOS
         Map<Long, List<String>> resultadosSenete = new HashMap<>();
         Map<Long, List<String>> resultadosTelebingo = new HashMap<>();
 
-        // 4. EJECUTAR LÓGICA
-        ejecutarLogicaJuego(poolSenete, request.getVendedores(), true, request.isMezclar(), resultadosSenete);
-        ejecutarLogicaJuego(poolTelebingo, request.getVendedores(), false, request.isMezclar(), resultadosTelebingo);
+        // 5. EJECUTAR LÓGICA (Procesamos cada juego por separado pero CON EL MISMO ORDEN de personas)
+        procesarFilaConDesperdicioIlimitado(poolSenete, vendedoresOrdenados, true, resultadosSenete);
+        procesarFilaConDesperdicioIlimitado(poolTelebingo, vendedoresOrdenados, false, resultadosTelebingo);
 
-        // 5. RETORNAR DTOs (Ordenados por RANGO ASIGNADO)
+        // 6. RETORNAR DTOs
+        // Ordenamos por rango de Seneté para el PDF (1, 2, 3...)
         return request.getVendedores().stream()
                 .map(v -> VendedorSimuladoDTO.builder()
                         .id(v.getId())
@@ -51,65 +59,111 @@ public class DistribucionService {
                         .rangosSenete(resultadosSenete.getOrDefault(v.getId(), new ArrayList<>()))
                         .rangosTelebingo(resultadosTelebingo.getOrDefault(v.getId(), new ArrayList<>()))
                         .build())
-                .sorted(Comparator.comparingInt(this::extraerInicioOrdenamiento)) // Orden visual numérico
+                .sorted(Comparator.comparingInt(this::extraerInicioOrdenamiento))
                 .collect(Collectors.toList());
     }
 
-    private void ejecutarLogicaJuego(LinkedList<RangoLogico> pool,
-                                     List<VendedorInputDTO> vendedores,
-                                     boolean esSenete,
-                                     boolean mezclar,
-                                     Map<Long, List<String>> mapaResultados) {
+    private void procesarFilaConDesperdicioIlimitado(LinkedList<RangoLogico> pool,
+                                                     List<VendedorInputDTO> vendedoresEnOrden,
+                                                     boolean esSenete,
+                                                     Map<Long, List<String>> mapaResultados) {
 
-        List<VendedorInputDTO> vips = new ArrayList<>();
-        List<VendedorInputDTO> normales = new ArrayList<>();
+        for (VendedorInputDTO vendedorOriginal : vendedoresEnOrden) {
 
-        for (VendedorInputDTO v : vendedores) {
-            int cantidad = esSenete ? (v.getCantidadSenete() == null ? 0 : v.getCantidadSenete())
-                    : (v.getCantidadTelebingo() == null ? 0 : v.getCantidadTelebingo());
-            Integer terminacion = esSenete ? v.getTerminacionSenete() : v.getTerminacionTelebingo();
+            // Obtenemos la cantidad necesaria para ESTE juego
+            int cantidadNecesaria = esSenete ? (vendedorOriginal.getCantidadSenete() == null ? 0 : vendedorOriginal.getCantidadSenete())
+                    : (vendedorOriginal.getCantidadTelebingo() == null ? 0 : vendedorOriginal.getCantidadTelebingo());
 
-            if (cantidad > 0) {
-                if (terminacion != null && terminacion >= 0) {
-                    vips.add(v);
+            if (cantidadNecesaria <= 0) continue;
+
+            Integer terminacion = esSenete ? vendedorOriginal.getTerminacionSenete() : vendedorOriginal.getTerminacionTelebingo();
+            boolean esVip = (terminacion != null && terminacion >= 0);
+
+            // BUCLE: El vendedor se queda en ventanilla hasta completar su pedido
+            while (cantidadNecesaria > 0 && !pool.isEmpty()) {
+
+                RangoLogico rangoActual = pool.getFirst();
+                int inicioActual = rangoActual.getInicio();
+                int disponibleBloque = rangoActual.getCantidad();
+
+                boolean quemarPapel = false;
+                int aQuemar = 0;
+                int aTomar = 0;
+
+                // --- LÓGICA DE DECISIÓN SIMPLIFICADA ---
+
+                if (!esVip) {
+                    // NORMAL: No quema nada, toma lo que hay.
+                    aTomar = Math.min(cantidadNecesaria, disponibleBloque);
                 } else {
-                    normales.add(v);
+                    // VIP: ¿Mi terminación está en el rango inmediato que tomaría?
+                    // "Inmediato" significa: si tomo 'cantidadNecesaria' cartones empezando AHORA.
+                    if (rangoContieneTerminacion(inicioActual, cantidadNecesaria, terminacion)) {
+                        // SÍ: La tengo. Tomo los cartones.
+                        aTomar = Math.min(cantidadNecesaria, disponibleBloque);
+                    } else {
+                        // NO: Está más adelante.
+                        // Calculamos distancia exacta.
+                        int distancia = calcularDistancia(inicioActual, terminacion);
+
+                        // Como permitimos desperdicio ILIMITADO, quemamos exactamente la distancia
+                        // para quedar parados sobre el número (o avanzar si el bloque se acaba).
+                        quemarPapel = true;
+                        aQuemar = Math.min(distancia, disponibleBloque);
+                    }
+                }
+
+                // --- EJECUCIÓN FÍSICA ---
+
+                if (quemarPapel) {
+                    // Tiramos hojas a la basura (nadie se las lleva)
+                    // Esto avanza el contador 'inicio' del rango
+                    rangoActual.setInicio(rangoActual.getInicio() + aQuemar);
+                    consumirBloqueSiVacio(pool, rangoActual);
+                    // NO restamos cantidadNecesaria, el vendedor sigue esperando.
+                }
+                else if (aTomar > 0) {
+                    // Asignamos al vendedor
+                    int finCorte = rangoActual.getInicio() + aTomar - 1;
+                    String rangoStr = rangoActual.getInicio() + "-" + finCorte;
+
+                    mapaResultados.computeIfAbsent(vendedorOriginal.getId(), k -> new ArrayList<>()).add(rangoStr);
+
+                    rangoActual.setInicio(finCorte + 1);
+                    consumirBloqueSiVacio(pool, rangoActual);
+
+                    cantidadNecesaria -= aTomar;
+                }
+                else {
+                    // Caso borde (pool vacío o error)
+                    pool.removeFirst();
                 }
             }
         }
+    }
 
-        // 1. MEZCLAR LISTAS (Aleatoriedad)
-        if (mezclar) {
-            Collections.shuffle(vips);
-            Collections.shuffle(normales);
+    private void consumirBloqueSiVacio(LinkedList<RangoLogico> pool, RangoLogico rango) {
+        if (rango.getInicio() > rango.getFin()) {
+            pool.removeFirst();
         }
+    }
 
-        // 2. FASE VIP (Anclaje Aleatorio)
-        Random random = new Random();
-        for (VendedorInputDTO vip : vips) {
-            int cantidad = esSenete ? vip.getCantidadSenete() : vip.getCantidadTelebingo();
-            int terminacion = esSenete ? vip.getTerminacionSenete() : vip.getTerminacionTelebingo();
+    private int calcularDistancia(int numeroActual, int terminacionDeseada) {
+        int termActual = numeroActual % 100;
+        if (termActual == terminacionDeseada) return 0;
 
-            List<RangoLogico> candidatos = buscarCandidatos(pool, terminacion, cantidad);
-
-            if (candidatos.isEmpty()) {
-                mapaResultados.put(vip.getId(), List.of("ERROR: Sin cupo para " + terminacion));
-                continue;
-            }
-
-            RangoLogico eleccion = candidatos.get(random.nextInt(candidatos.size()));
-            cortarYAsignarVip(pool, eleccion);
-            mapaResultados.put(vip.getId(), List.of(eleccion.getInicio() + "-" + eleccion.getFin()));
+        if (termActual < terminacionDeseada) {
+            return terminacionDeseada - termActual;
+        } else {
+            return (100 - termActual) + terminacionDeseada;
         }
+    }
 
-        // 3. COMPACTAR (Limpieza de terreno antes de los normales)
-        compactarPool(pool);
-
-        // 4. FASE NORMALES (Best Fit)
-        for (VendedorInputDTO normal : normales) {
-            int cantidad = esSenete ? normal.getCantidadSenete() : normal.getCantidadTelebingo();
-            mapaResultados.put(normal.getId(), consumirHuecosBestFit(pool, cantidad));
-        }
+    private boolean rangoContieneTerminacion(int inicio, int cantidad, int terminacionDeseada) {
+        int distancia = calcularDistancia(inicio, terminacionDeseada);
+        // Si la distancia es menor que la cantidad que voy a llevar,
+        // significa que el número deseado caerá en mis manos.
+        return distancia < cantidad;
     }
 
     // --- MÉTODOS AUXILIARES ---
@@ -122,109 +176,12 @@ public class DistribucionService {
         }
         if (inicioGeneral != null) {
             LinkedList<RangoLogico> poolAjustado = new LinkedList<>();
-            // FÓRMULA: Inicio + Demanda + Margen(100)
-            int finCalculado = inicioGeneral + demandaTotal + MARGEN_SEGURIDAD;
+            // Multiplicamos x4 o x5 la demanda total para tener suficiente papel para quemar
+            int finCalculado = inicioGeneral + (demandaTotal * 4) + MARGEN_SEGURIDAD;
             poolAjustado.add(new RangoLogico(inicioGeneral, finCalculado));
             return poolAjustado;
         }
         return new LinkedList<>();
-    }
-
-    private void compactarPool(LinkedList<RangoLogico> pool) {
-        if (pool.size() < 2) return;
-        pool.sort(Comparator.comparingInt(RangoLogico::getInicio));
-        ListIterator<RangoLogico> iterator = pool.listIterator();
-        RangoLogico actual = iterator.next();
-        while (iterator.hasNext()) {
-            RangoLogico siguiente = iterator.next();
-            if (actual.getFin() + 1 == siguiente.getInicio()) {
-                actual.setFin(siguiente.getFin());
-                iterator.remove();
-            } else {
-                actual = siguiente;
-            }
-        }
-    }
-
-    private List<String> consumirHuecosBestFit(LinkedList<RangoLogico> pool, int cantidadNecesaria) {
-        List<String> reporte = new ArrayList<>();
-        int mejorIndice = -1;
-        int menorDesperdicio = Integer.MAX_VALUE;
-
-        // BEST FIT SCAN
-        for (int i = 0; i < pool.size(); i++) {
-            RangoLogico rango = pool.get(i);
-            if (rango.getCantidad() >= cantidadNecesaria) {
-                int desperdicio = rango.getCantidad() - cantidadNecesaria;
-                if (desperdicio == 0) { mejorIndice = i; break; }
-                if (desperdicio < menorDesperdicio) {
-                    menorDesperdicio = desperdicio;
-                    mejorIndice = i;
-                }
-            }
-        }
-
-        if (mejorIndice != -1) {
-            RangoLogico rangoElegido = pool.get(mejorIndice);
-            int finCorte = rangoElegido.getInicio() + cantidadNecesaria - 1;
-            reporte.add(rangoElegido.getInicio() + "-" + finCorte);
-            rangoElegido.setInicio(finCorte + 1);
-            if (rangoElegido.getInicio() > rangoElegido.getFin()) pool.remove(mejorIndice);
-            return reporte;
-        }
-
-        // FALLBACK FRAGMENTADO
-        while (cantidadNecesaria > 0 && !pool.isEmpty()) {
-            RangoLogico rangoActual = pool.getFirst();
-            if (rangoActual.getCantidad() <= cantidadNecesaria) {
-                reporte.add(rangoActual.getInicio() + "-" + rangoActual.getFin());
-                cantidadNecesaria -= rangoActual.getCantidad();
-                pool.removeFirst();
-            } else {
-                int finCorte = rangoActual.getInicio() + cantidadNecesaria - 1;
-                reporte.add(rangoActual.getInicio() + "-" + finCorte);
-                rangoActual.setInicio(finCorte + 1);
-                cantidadNecesaria = 0;
-            }
-        }
-        if (cantidadNecesaria > 0) reporte.add("FALTAN: " + cantidadNecesaria);
-        return reporte;
-    }
-
-    private List<RangoLogico> buscarCandidatos(LinkedList<RangoLogico> pool, int terminacion, int cantidad) {
-        List<RangoLogico> opciones = new ArrayList<>();
-        int target = terminacion % 100;
-        for (RangoLogico rango : pool) {
-            int actual = rango.getInicio();
-            while (actual <= rango.getFin()) {
-                if (actual % 100 == target) {
-                    int finPropuesto = actual;
-                    int inicioPropuesto = finPropuesto - cantidad + 1;
-                    if (inicioPropuesto >= rango.getInicio()) {
-                        opciones.add(new RangoLogico(inicioPropuesto, finPropuesto));
-                    }
-                }
-                actual++;
-            }
-        }
-        return opciones;
-    }
-
-    private void cortarYAsignarVip(LinkedList<RangoLogico> pool, RangoLogico asignacion) {
-        ListIterator<RangoLogico> iterator = pool.listIterator();
-        while (iterator.hasNext()) {
-            RangoLogico rangoPadre = iterator.next();
-            if (rangoPadre.contiene(asignacion.getInicio(), asignacion.getFin())) {
-                iterator.remove();
-                if (asignacion.getInicio() > rangoPadre.getInicio()) {
-                    iterator.add(new RangoLogico(rangoPadre.getInicio(), asignacion.getInicio() - 1));
-                }
-                if (asignacion.getFin() < rangoPadre.getFin()) {
-                    iterator.add(new RangoLogico(asignacion.getFin() + 1, rangoPadre.getFin()));
-                }
-                return;
-            }
-        }
     }
 
     private void validarConfiguracion(SimulacionRequestDTO request) {
@@ -238,7 +195,6 @@ public class DistribucionService {
         }
     }
 
-    // Helper para ordenar visualmente el JSON final por el primer número asignado
     private int extraerInicioOrdenamiento(VendedorSimuladoDTO dto) {
         List<String> rangos = (dto.getRangosSenete() != null && !dto.getRangosSenete().isEmpty())
                 ? dto.getRangosSenete() : dto.getRangosTelebingo();
