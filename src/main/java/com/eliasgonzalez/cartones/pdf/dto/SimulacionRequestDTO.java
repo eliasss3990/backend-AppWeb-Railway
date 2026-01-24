@@ -2,6 +2,7 @@ package com.eliasgonzalez.cartones.pdf.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
 import lombok.*;
 
 import java.time.DayOfWeek;
@@ -24,6 +25,7 @@ public class SimulacionRequestDTO {
     private Integer inicioTelebingoGral;
 
     // Lista de vendedores
+    @Valid
     private List<VendedorInputDTO> vendedores;
 
     // Fechas

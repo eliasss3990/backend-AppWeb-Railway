@@ -1,5 +1,6 @@
 package com.eliasgonzalez.cartones.pdf.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Data
@@ -8,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 public class VendedorInputDTO {
 
+    @NotNull
     private Long id;
     private String nombre;
 

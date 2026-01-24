@@ -10,6 +10,7 @@ import com.eliasgonzalez.cartones.pdf.service.DistribucionService;
 import com.eliasgonzalez.cartones.pdf.service.ProcesoIdService;
 import com.eliasgonzalez.cartones.shared.exception.ResourceNotFoundException;
 import com.eliasgonzalez.cartones.shared.exception.UnprocessableEntityException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,7 +35,7 @@ public class DistribucionController {
 
     @PostMapping("/{procesoId}/simular")
     public ResponseEntity<List<VendedorSimuladoDTO>> simularDistribucion(
-            @RequestBody SimulacionRequestDTO request,
+            @Valid @RequestBody SimulacionRequestDTO request,
             @PathVariable(name = "procesoId") String procesoIdRecibido) {
 
         PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
