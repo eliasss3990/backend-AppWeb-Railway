@@ -24,13 +24,15 @@ public class VendedorController {
 
     @GetMapping("/{procesoId}")
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (
-            @PathVariable (name = "procesoId") String procesoIdCreado){
+            @PathVariable (name = "procesoId") String procesoIdRecibido
+    ){
 
-        return ResponseEntity.ok(vendedorService.listarVendedoresValidos(procesoIdCreado));
+        return ResponseEntity.ok(vendedorService.listarVendedoresValidos(procesoIdRecibido));
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> eliminarTodosLosVendedores() {
+    @DeleteMapping()
+    public ResponseEntity<Void> eliminarVendedores() {
+
         vendedorService.eliminarTodosLosVendedores();
         return ResponseEntity.noContent().build();
     }

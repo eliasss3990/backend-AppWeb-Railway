@@ -3,7 +3,6 @@ package com.eliasgonzalez.cartones.vendedor.interfaces;
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorResponseDTO;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public interface IVendedorService {
@@ -11,7 +10,7 @@ public interface IVendedorService {
     // GET
     List<VendedorResponseDTO> listaVendedores ();
 
-    List<VendedorResponseDTO> listarVendedoresValidos (String procesoIdCreado);
+    List<VendedorResponseDTO> listarVendedoresValidos (String procesoIdRecibido);
 
     // DELETE
     void eliminarTodosLosVendedores ();
