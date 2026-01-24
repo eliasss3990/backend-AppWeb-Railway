@@ -24,6 +24,7 @@ public class GestionArchivoPdfService {
 
         Resource zip = pdfService.obtenerZipPdfs(
                 procesoId,
+                proceso,
                 saveInMemoryTemp.getVendedorSimuladoDTOs(),
                 saveInMemoryTemp.getFechaSorteoSenete(),
                 saveInMemoryTemp.getFechaSorteoTelebingo()

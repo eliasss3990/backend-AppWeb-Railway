@@ -1,6 +1,7 @@
 package com.eliasgonzalez.cartones.pdf.interfaces;
 
 import com.eliasgonzalez.cartones.pdf.dto.VendedorSimuladoDTO;
+import com.eliasgonzalez.cartones.pdf.entity.PdfProcesos;
 import org.springframework.core.io.Resource;
 
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ public interface IPdfService {
 
     Resource obtenerZipPdfs (
             String procesoIdRecibido,
+            PdfProcesos proceso,
             List<VendedorSimuladoDTO> config,
             LocalDate fechaSorteoSenete,
             LocalDate fechaSorteoTelebingo
