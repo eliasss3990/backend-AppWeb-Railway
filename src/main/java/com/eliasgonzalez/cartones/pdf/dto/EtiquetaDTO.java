@@ -1,7 +1,6 @@
 package com.eliasgonzalez.cartones.pdf.dto;
 
 import lombok.*;
-
 import java.util.List;
 
 @AllArgsConstructor
@@ -14,14 +13,12 @@ public class EtiquetaDTO {
     private String nombre;
     private String saldo;
 
-    private List<String> seneteRango;
+    private List<String> seneteRangos;
     private String seneteCartones;
     private String resultadoSenete;
-    private String fechaSorteoSenete;
 
-    private List<String> telebingoRango;
+    private List<String> telebingoRangos;
     private String telebingoCartones;
     private String resultadoTelebingo;
-    private String fechaSorteoTelebingo;
 
 }

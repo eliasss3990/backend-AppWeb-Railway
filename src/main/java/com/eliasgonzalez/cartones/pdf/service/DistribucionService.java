@@ -3,11 +3,13 @@ package com.eliasgonzalez.cartones.pdf.service;
 import com.eliasgonzalez.cartones.pdf.dto.*;
 import com.eliasgonzalez.cartones.pdf.dto.RangoLogico;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class DistribucionService {
 
     // Margen de seguridad

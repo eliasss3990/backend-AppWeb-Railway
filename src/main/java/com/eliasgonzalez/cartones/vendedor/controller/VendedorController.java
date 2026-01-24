@@ -2,7 +2,7 @@ package com.eliasgonzalez.cartones.vendedor.controller;
 
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorResponseDTO;
 import com.eliasgonzalez.cartones.vendedor.interfaces.IVendedorService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,14 +10,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/vendedores")
 public class VendedorController {
 
-    @Autowired
-    private IVendedorService vendedorService;
+    private final IVendedorService vendedorService;
 
     // TODO: eliminar luego de pruebas
-    @GetMapping("/all")
+    @GetMapping("/vendedoresTemporal")
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedores (){
         return ResponseEntity.ok(vendedorService.listaVendedores());
     }
@@ -28,7 +28,7 @@ public class VendedorController {
         return ResponseEntity.ok(vendedores);
     }
 
-    @DeleteMapping("/deleteAll")
+    @DeleteMapping
     public ResponseEntity<Void> eliminarTodosLosVendedores() {
         vendedorService.eliminarTodosLosVendedores();
         return ResponseEntity.noContent().build();

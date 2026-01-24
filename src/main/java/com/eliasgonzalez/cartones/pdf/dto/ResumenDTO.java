@@ -1,6 +1,7 @@
 package com.eliasgonzalez.cartones.pdf.dto;
 
 import lombok.*;
+import java.util.Map;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -8,12 +9,13 @@ import lombok.*;
 @Builder
 public class ResumenDTO {
 
-    public String nombre;
-    public String seneteDel;
-    public String seneteAl;
-    public String telebingoDel;
-    public String telebingoAl;
-    public int cantidadSenete;
-    public int cantidadTelebingo;
+    private int numeroVendedor;
+    private String nombre;
+
+    private Map<String, String> seneteDelAl;
+    private int cantidadSenete;
+
+    private Map<String, String> telebingoDelAl;
+    private int cantidadTelebingo;
 
 }

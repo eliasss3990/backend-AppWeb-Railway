@@ -1,7 +1,6 @@
 package com.eliasgonzalez.cartones.excel.service;
 
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorExcelDTO;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
 public class ExcelValidationService {
 
     /**

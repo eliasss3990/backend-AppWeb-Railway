@@ -12,128 +12,111 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
+@Transactional
 public class PdfEtiquetasService {
 
-    @Transactional
-    public byte[] generarEtiquetas(List<EtiquetaDTO> etiquetas, String fechaPersonalizada) {
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()){
+    public byte[] generarEtiquetas(List<EtiquetaDTO> etiquetas, LocalDate fechaSenete, LocalDate fechaTelebingo) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4);
             PdfWriter writer = PdfWriter.getInstance(document, baos);
 
             document.open();
             PdfContentByte cb = writer.getDirectContent();
 
-            // Configuración de dimensiones
+            // --- CONFIGURACIÓN DE DIMENSIONES ---
             float width = PageSize.A4.getWidth();
             float height = PageSize.A4.getHeight();
             float margen = 20;
-            float espacioVertical = 15;
-            float altoEtiqueta = (height - 2 * margen - 2 * espacioVertical) / 3;
-            float anchoMitad = (width - 2 * margen) / 2;
+            float espV = 15; // Espacio vertical entre etiquetas
+            float altoEt = (height - 2 * margen - 2 * espV) / 3;
+            float mitad = (width - 2 * margen) / 2;
 
-            // Fuentes
-            BaseFont helvetica = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
-            BaseFont helveticaBold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+            // --- FUENTES ---
+            BaseFont helv = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+            BaseFont bold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+
+            // --- PREPARACIÓN DE FECHAS ---
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            String txtFechaSenete = fechaSenete.format(fmt);
+            String txtFechaTelebingo = fechaTelebingo.format(fmt);
+            boolean fechasIguales = fechaSenete.isEqual(fechaTelebingo);
 
             for (int i = 0; i < etiquetas.size(); i++) {
                 EtiquetaDTO item = etiquetas.get(i);
 
-                // Cálculo de Y (invertido en lógica visual, pero igual a coordenadas PDF)
-                float y = height - margen - ((i % 3) + 1) * altoEtiqueta - (i % 3) * espacioVertical;
+                // Cálculo de la posición Y base de la etiqueta actual (invertida)
+                float y = height - margen - ((i % 3) + 1) * altoEt - (i % 3) * espV;
 
-                // Dibujar recuadro
-                cb.setLineWidth(0.8f);
-                cb.rectangle(margen, y, width - 2 * margen, altoEtiqueta);
+                // 1. RECUADRO EXTERIOR
+                cb.setLineWidth(1f);
+                cb.rectangle(margen, y, width - 2 * margen, altoEt);
                 cb.stroke();
 
-                // Número de orden (#1, #2...)
+                // 2. NÚMERO DE VENDEDOR (Esquina Superior Derecha)
                 cb.beginText();
-                cb.setFontAndSize(helveticaBold, 24);
-                cb.setTextMatrix(width - margen - 45, y + altoEtiqueta - 245); // Ajuste manual de coordenadas
-                cb.showText("#" + item.getNumeroVendedor());
+                cb.setFontAndSize(bold, 24);
+                // Pegado al margen derecho (margen - 5)
+                cb.showTextAligned(Element.ALIGN_RIGHT, "#" + item.getNumeroVendedor(), width - margen - 5, y + altoEt - 25, 0);
                 cb.endText();
 
-                // Encabezado
+                // 3. CABECERA IZQUIERDA (Datos Distribuidor)
                 cb.beginText();
-                cb.setFontAndSize(helveticaBold, 10);
-                cb.setTextMatrix(margen + 10, y + altoEtiqueta - 20);
+                cb.setFontAndSize(bold, 10);
+                cb.setTextMatrix(margen + 10, y + altoEt - 20);
                 cb.showText("ROBERTO GONZÁLEZ");
-                cb.setTextMatrix(margen + 10, y + altoEtiqueta - 35);
+                cb.setTextMatrix(margen + 10, y + altoEt - 35);
                 cb.showText("DIST - ITAUGUÁ - PY");
-                cb.setTextMatrix(margen + 10, y + altoEtiqueta - 50);
+                cb.setTextMatrix(margen + 10, y + altoEt - 50);
                 cb.showText("0983 433572");
+
+                // 4. CABECERA DERECHA (Fechas)
+                float xFechas = width - margen - 65;
+
+                if (fechasIguales) {
+                    cb.showTextAligned(Element.ALIGN_RIGHT, "SORTEO: " + txtFechaSenete, xFechas, y + altoEt - 35, 0);
+                } else {
+                    cb.showTextAligned(Element.ALIGN_RIGHT, "SORTEO SENETÉ: " + txtFechaSenete, xFechas, y + altoEt - 25, 0);
+                    cb.showTextAligned(Element.ALIGN_RIGHT, "SORTEO TELEBINGO: " + txtFechaTelebingo, xFechas, y + altoEt - 40, 0);
+                }
                 cb.endText();
 
-                // Línea separadora encabezado
-                cb.moveTo(margen, y + altoEtiqueta - 60);
-                cb.lineTo(width - margen, y + altoEtiqueta - 60);
+                // LÍNEA SEPARADORA ENCABEZADO
+                cb.moveTo(margen, y + altoEt - 60);
+                cb.lineTo(width - margen, y + altoEt - 60);
                 cb.stroke();
 
-                // Fecha (Alineada a la derecha)
+                // 5. NOMBRE DEL VENDEDOR (Grande y Centrado)
                 cb.beginText();
-                cb.setFontAndSize(helveticaBold, 12);
-                cb.showTextAligned(Element.ALIGN_RIGHT, "Fecha del sorteo: " + fechaPersonalizada, width - margen - 10, y + altoEtiqueta - 35, 0);
+                cb.setFontAndSize(bold, 15);
+                cb.showTextAligned(Element.ALIGN_CENTER, item.getNombre() != null ? item.getNombre().toUpperCase() : "", width / 2, y + altoEt - 85, 0);
                 cb.endText();
 
-                // Nombre del vendedor (Centrado)
+                // 6. COLUMNAS DINÁMICAS (Listas de Rangos)
+                // Seneté (Izquierda)
+                dibujarColumnaDinamica(cb, "SENETÉ", item.getSeneteRangos(), item.getSeneteCartones(), item.getResultadoSenete(),
+                        margen + 20, y + altoEt - 110, helv, bold);
+
+                // Telebingo (Derecha)
+                dibujarColumnaDinamica(cb, "TELEBINGO", item.getTelebingoRangos(), item.getTelebingoCartones(), item.getResultadoTelebingo(),
+                        margen + mitad + 20, y + altoEt - 110, helv, bold);
+
+
+                // 7. SALDO (Fijo abajo al centro con prefijo "Gs.")
                 cb.beginText();
-                cb.setFontAndSize(helveticaBold, 16);
-                String nombreMostrar = item.getNombre() != null ? item.getNombre().toUpperCase() : "";
-                cb.showTextAligned(Element.ALIGN_CENTER, nombreMostrar, width / 2, y + altoEtiqueta - 85, 0);
+                cb.setFontAndSize(bold, 12);
+                cb.showTextAligned(Element.ALIGN_CENTER, "SALDO", width / 2, y + 45, 0);
+
+                cb.setFontAndSize(helv, 11);
+                // Agregamos "Gs."
+                cb.showTextAligned(Element.ALIGN_CENTER, "Gs. " + (item.getSaldo() != null ? item.getSaldo() : "0"), width / 2, y + 30, 0);
                 cb.endText();
 
-                // Sección SENETÉ
-                cb.beginText();
-                cb.setFontAndSize(helveticaBold, 12);
-                cb.setTextMatrix(margen + 30, y + altoEtiqueta - 110);
-                cb.showText("SENETÉ:");
-                cb.setFontAndSize(helvetica, 11);
-                cb.setTextMatrix(margen + 30, y + altoEtiqueta - 125);
-                cb.showText(item.getSeneteRango() + " (" + item.getSeneteCartones() + " cartones)");
-                cb.endText();
-
-                // Sección TELEBINGO
-                cb.beginText();
-                cb.setFontAndSize(helveticaBold, 12);
-                cb.setTextMatrix(margen + 30 + anchoMitad, y + altoEtiqueta - 110);
-                cb.showText("TELEBINGO:");
-                cb.setFontAndSize(helvetica, 11);
-                cb.setTextMatrix(margen + 30 + anchoMitad, y + altoEtiqueta - 125);
-                cb.showText(item.getTelebingoRango() + " (" + item.getTelebingoCartones() + " cartones)");
-                cb.endText();
-
-                // Títulos RESULTADOS
-                cb.beginText();
-                cb.setFontAndSize(helveticaBold, 12);
-                cb.setTextMatrix(margen + 30, y + altoEtiqueta - 160);
-                cb.showText("RESULTADOS:");
-                cb.setTextMatrix(margen + 30 + anchoMitad, y + altoEtiqueta - 160);
-                cb.showText("RESULTADOS:");
-                cb.endText();
-
-                // Valores RESULTADOS
-                cb.beginText();
-                cb.setFontAndSize(helvetica, 10);
-                cb.setTextMatrix(margen + 30, y + altoEtiqueta - 175);
-                cb.showText(item.getResultadoSenete());
-                cb.setTextMatrix(margen + 30 + anchoMitad, y + altoEtiqueta - 175);
-                cb.showText(item.getResultadoTelebingo());
-                cb.endText();
-
-                // SALDO
-                cb.beginText();
-                cb.setFontAndSize(helveticaBold, 12);
-                cb.setTextMatrix(margen + 30, y + altoEtiqueta - 217);
-                cb.showText("SALDO:");
-                cb.setFontAndSize(helvetica, 11);
-                cb.setTextMatrix(margen + 90, y + altoEtiqueta - 217);
-                cb.showText(item.getSaldo());
-                cb.endText();
-
-                // Paginación: Si es múltiplo de 3 y no es el último elemento
+                // PAGINACIÓN (Cada 3 etiquetas, nueva hoja)
                 if ((i + 1) % 3 == 0 && (i + 1) < etiquetas.size()) {
                     document.newPage();
                 }
@@ -142,8 +125,54 @@ public class PdfEtiquetasService {
             document.close();
             return baos.toByteArray();
 
-        } catch (Exception e){
-            throw new PdfCreationException("Error al crear el PDF de etiquetas", List.of(e.getMessage()));
+        } catch (Exception e) {
+            throw new PdfCreationException("Error generando el PDF de etiquetas", List.of(e.getMessage()));
         }
+    }
+
+    /**
+     * Dibuja una columna de producto (Título, Lista de Rangos, Total condicional y Resultados).
+     * @param x Coordenada X base de la columna
+     * @param yInicio Coordenada Y donde empieza el título
+     */
+    private void dibujarColumnaDinamica(PdfContentByte cb, String titulo, List<String> rangos, String total, String resultado,
+                                        float x, float yInicio, BaseFont fNorm, BaseFont fBold) {
+        float curY = yInicio;
+
+        cb.beginText();
+
+        // Título Columna
+        cb.setFontAndSize(fBold, 11);
+        cb.showTextAligned(Element.ALIGN_CENTER, titulo, x + 40, curY, 0);
+        curY -= 15;
+
+        // Lista de Rangos
+        cb.setFontAndSize(fNorm, 10);
+        if (rangos != null) {
+            for (String r : rangos) {
+                cb.showTextAligned(Element.ALIGN_LEFT, r, x, curY, 0);
+                curY -= 12; // Desplazamiento vertical por cada rango
+            }
+        }
+
+        // Lógica Dinámica de TOTAL
+        // Solo mostramos la línea de total si hay más de 1 rango en la lista
+        if (rangos != null && rangos.size() > 1) {
+            cb.setFontAndSize(fBold, 10);
+            cb.showTextAligned(Element.ALIGN_LEFT, "TOTAL ------------> (" + total + ")", x, curY, 0);
+            curY -= 20; // Espacio extra antes de Resultados
+        } else {
+            curY -= 10; // Espacio normal
+        }
+
+        // Título RESULTADOS (Posición depende de la cantidad de rangos)
+        cb.setFontAndSize(fBold, 11);
+        cb.showTextAligned(Element.ALIGN_CENTER, "RESULTADOS", x + 40, curY, 0);
+
+        // Valor RESULTADOS
+        cb.setFontAndSize(fNorm, 11);
+        cb.showTextAligned(Element.ALIGN_CENTER, resultado != null ? resultado : "0", x + 40, curY - 15, 0);
+
+        cb.endText();
     }
 }

@@ -1,5 +1,6 @@
 package com.eliasgonzalez.cartones.pdf.controller;
 
+import com.eliasgonzalez.cartones.pdf.component.SaveInMemoryTemp;
 import com.eliasgonzalez.cartones.pdf.dto.SimulacionRequestDTO;
 import com.eliasgonzalez.cartones.pdf.dto.VendedorSimuladoDTO;
 import com.eliasgonzalez.cartones.pdf.entity.PdfProcesos;
@@ -17,73 +18,71 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vendedores")
+@RequestMapping("/api/distribuciones")
 @RequiredArgsConstructor
 public class DistribucionController {
 
     private final DistribucionService distribucionService;
     private final IPdfService pdfService;
     private final PdfProcesosRepository pdfProcesosRepo;
+    private final SaveInMemoryTemp saveInMemoryTemp;
 
-    /**
-     * Endpoint 1: SIMULAR / MEZCLAR
-     * Recibe la configuración y los inputs del usuario, devuelve la tabla simulada.
-     * NO guarda en BD.
-     */
-    @PostMapping("/{procesoId}/distribucion/simular")
+
+    @PostMapping("/{procesoId}/simular")
     public ResponseEntity<List<VendedorSimuladoDTO>> simularDistribucion(
             @RequestBody SimulacionRequestDTO request,
             @PathVariable String procesoIdRecibido) {
 
-        // Verificamos el procesoId
         PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
                 .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", null));
 
         ProcesoIdService.PendienteToVerificando(procesoIdRecibido, pdfProcesos);
 
-        // Pasamos el procesoIdRecibido al servicio por si necesita validar o buscar datos originales
         List<VendedorSimuladoDTO> simulacion = distribucionService.simularDistribucion(request);
+
+        // Guardar en memoria
+        saveInMemoryTemp.guardar(simulacion);
+        saveInMemoryTemp.setFechaSorteoSenete(request.getFechaSorteoSenete());
+        saveInMemoryTemp.setFechaSorteoTelebingo(request.getFechaSorteoTelebingo());
 
         return ResponseEntity.ok(simulacion);
     }
 
-    /**
-     * Endpoint 2: CREAR PDF
-     * El usuario aceptó la tabla visualizada. Aquí se generan y guardan los PDFs en BD.
-     */
-    @PostMapping("/{procesoId}/distribucion/crear-pdf")
-    public ResponseEntity<Resource> guardarDistribucion(@RequestBody SimulacionRequestDTO distribucionAceptada,
-                                                        @PathVariable(name = "procesoId") String procesoIdRecibido){
 
-        // Validamos que la lista no venga vacía
-        if (distribucionAceptada == null) {
-            distribucionAceptada = new SimulacionRequestDTO();
-        }
+    @PostMapping("/{procesoId}/crear-pdf")
+    public ResponseEntity<Resource> guardarDistribucion(@PathVariable(name = "procesoId") String procesoIdRecibido){
+
+        // Recuperar de memoria usando la instancia inyectada
+        List<VendedorSimuladoDTO> distribucionAceptada = saveInMemoryTemp.getVendedorSimuladoDTOs();
+        LocalDate fechaSorteoSenete = saveInMemoryTemp.getFechaSorteoSenete();
+        LocalDate fechaSorteoTelebingo = saveInMemoryTemp.getFechaSorteoTelebingo();
 
         PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
                 .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", null));
 
-        ProcesoIdService.VerificandoToCompletado(procesoIdRecibido, pdfProcesos);
-
         try{
-            Resource zip = pdfService.obtenerZipPdfs(procesoIdRecibido, distribucionAceptada);
+            Resource zip = pdfService.obtenerZipPdfs(
+                    procesoIdRecibido,
+                    distribucionAceptada,
+                    fechaSorteoSenete,
+                    fechaSorteoTelebingo
+            );
+
+            // Actualizar estado después de éxito
+            ProcesoIdService.VerificandoToCompletado(procesoIdRecibido, pdfProcesos);
 
             return ResponseEntity.ok()
-                    // 1. Tipo de contenido específico
                     .contentType(MediaType.parseMediaType("application/zip"))
-                    // 2. Nombre del archivo
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"pdfs-" + procesoIdRecibido + ".zip\"")
-                    // 3. Tamaño del archivo para la barra de carga
+                    // Tamaño del archivo para la barra de carga
                     .contentLength(zip.contentLength())
                     .body(zip);
         } catch (IOException e){
             throw new UnprocessableEntityException("Error al procesar el archivo ZIP.", List.of(e.getMessage()));
-        } catch (Exception e) {
-            System.out.println("LOG DE PRUEBA: " + e.getMessage());
-            throw new UnprocessableEntityException("Error al procesar.", List.of(e.getMessage()));
         }
     }
 }

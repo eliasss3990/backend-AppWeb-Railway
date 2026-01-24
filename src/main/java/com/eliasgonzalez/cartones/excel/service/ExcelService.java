@@ -9,6 +9,7 @@ import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
 import com.eliasgonzalez.cartones.vendedor.interfaces.VendedorRepository;
 import com.eliasgonzalez.cartones.shared.util.Util;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * desde un archivo Excel, aplicando un enfoque de "Todo o Nada".
  */
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ExcelService implements IExcelService {
 
     private final VendedorRepository vendedorRepo;

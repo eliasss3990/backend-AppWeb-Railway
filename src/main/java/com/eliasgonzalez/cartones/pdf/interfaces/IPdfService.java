@@ -1,11 +1,18 @@
 package com.eliasgonzalez.cartones.pdf.interfaces;
 
-import com.eliasgonzalez.cartones.pdf.dto.ConfiguracionPdfDTO;
-import com.eliasgonzalez.cartones.pdf.dto.SimulacionRequestDTO;
+import com.eliasgonzalez.cartones.pdf.dto.VendedorSimuladoDTO;
 import org.springframework.core.io.Resource;
+
+import java.time.LocalDate;
+import java.util.List;
 
 public interface IPdfService {
 
-    Resource obtenerZipPdfs (String procesoIdRecibido, SimulacionRequestDTO config);
+    Resource obtenerZipPdfs (
+            String procesoIdRecibido,
+            List<VendedorSimuladoDTO> config,
+            LocalDate fechaSorteoSenete,
+            LocalDate fechaSorteoTelebingo
+    );
 
 }

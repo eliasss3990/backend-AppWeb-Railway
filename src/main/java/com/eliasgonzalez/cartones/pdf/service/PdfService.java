@@ -5,132 +5,109 @@ import com.eliasgonzalez.cartones.pdf.entity.PdfProcesos;
 import com.eliasgonzalez.cartones.pdf.enums.EstadoEnum;
 import com.eliasgonzalez.cartones.pdf.interfaces.IPdfService;
 import com.eliasgonzalez.cartones.pdf.interfaces.PdfProcesosRepository;
+import com.eliasgonzalez.cartones.pdf.mapper.PdfMapper;
 import com.eliasgonzalez.cartones.shared.exception.FileProcessingException;
 import com.eliasgonzalez.cartones.shared.exception.PdfCreationException;
 import com.eliasgonzalez.cartones.shared.exception.ResourceNotFoundException;
 import com.eliasgonzalez.cartones.shared.exception.UnprocessableEntityException;
+import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
+import com.eliasgonzalez.cartones.vendedor.interfaces.VendedorRepository;
 import com.eliasgonzalez.cartones.zip.ZipService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.Comparator;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PdfService implements IPdfService {
 
     private final PdfEtiquetasService pdfEtiquetasService;
     private final PdfResumenService pdfResumenService;
     private final PdfProcesosRepository pdfProcesosRepo;
+    private final VendedorRepository vendedorRepo;
+
+    private static final String ETIQUETAS = "etiquetas";
+    private static final String RESUMEN = "resumen";
 
     @Override
     @Transactional
-    public Resource obtenerZipPdfs(String procesoIdRecibido, SimulacionRequestDTO config) {
+    public Resource obtenerZipPdfs(
+            String procesoIdRecibido,
+            List<VendedorSimuladoDTO> config,
+            LocalDate fechaSorteoSenete,
+            LocalDate fechaSorteoTelebingo
+    ) {
         try {
-            // 1. Buscar Proceso
             PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
-                    .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", null));
+                    .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", List.of()));
 
-            // 2. Validar lógica de rangos (Ahora valida ambas listas por separado)
-            validarYFiltrarRangos(config);
+            // Generamos los PDFs
+            Map<String, byte[]> pdfsGenerados = generarPdfs(config, fechaSorteoSenete, fechaSorteoTelebingo, procesoIdRecibido);
+            byte[] etiquetas = pdfsGenerados.get(ETIQUETAS);
+            byte[] resumen = pdfsGenerados.get(RESUMEN);
 
-            // 3. Generar y guardar PDFs
-            generarYGuardarPdfs(procesoIdRecibido, pdfProcesos, config);
-
-            // 4. Validar Estado
             if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado()) &&
-                    !EstadoEnum.COMPLETADO.getValue().equals(pdfProcesos.getEstado())) { // Agregué COMPLETADO por si se regenera
-                throw new UnprocessableEntityException(
-                        "El estado del proceso no es válido para descarga.",
-                        List.of("Estado actual: " + pdfProcesos.getEstado())
-                );
+                    !EstadoEnum.COMPLETADO.getValue().equals(pdfProcesos.getEstado())) {
+                throw new UnprocessableEntityException("El estado del proceso no es válido para descarga.", List.of("Estado: " + pdfProcesos.getEstado()));
             }
 
-            // 5. Recuperar bytes
-            byte[] etiquetas = pdfProcesos.getPdfEtiquetas();
-            byte[] resumen = pdfProcesos.getPdfResumen();
-
-            if (etiquetas == null || resumen == null) {
-                throw new FileProcessingException("No se encontraron archivos PDF generados para: " + procesoIdRecibido, null);
-            }
-
-            // 6. Crear ZIP
             Map<String, byte[]> misPdfs = new HashMap<>();
             misPdfs.put("Imprimir_etiquetas.pdf", etiquetas);
             misPdfs.put("Resumen_entrega.pdf", resumen);
 
+            pdfProcesos.setPdfEtiquetas(pdfsGenerados.get(ETIQUETAS));
+            pdfProcesos.setPdfResumen(pdfsGenerados.get(RESUMEN));
+            pdfProcesos.setEstado(EstadoEnum.COMPLETADO.getValue());
+
+            pdfProcesosRepo.save(pdfProcesos);
+
             return ZipService.crearZip(misPdfs);
 
         } catch (IOException e) {
-            throw new FileProcessingException("Error de E/S al generar el ZIP: " + procesoIdRecibido, List.of(e.getMessage()));
+            throw new FileProcessingException("Error generando ZIP", List.of(e.getMessage()));
         } catch (Exception e) {
-            if (e instanceof RuntimeException) throw (RuntimeException) e; // Relanzar excepciones propias
-            throw new FileProcessingException("Error inesperado en la generación de PDF.", List.of(e.getMessage()));
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            throw new FileProcessingException("Error inesperado en PDF Service", List.of(e.getMessage()));
         }
     }
 
-    @Transactional
-    public void generarYGuardarPdfs(String procesoIdRecibido, PdfProcesos pdfProceso, SimulacionRequestDTO config) {
+    public Map<String, byte[]> generarPdfs(List<VendedorSimuladoDTO> config,
+                            LocalDate fechaSorteoSenete, LocalDate fechaSorteoTelebingo,
+                            String procesoIdRecibido
+    ) {
+        List<Vendedor> vendedoresList = vendedorRepo.findAllByProcesoId(procesoIdRecibido);
 
-        // AQUI DEBERÍAS LLAMAR A TU DISTRIBUCION SERVICE PARA OBTENER DATOS REALES
-        // Por ahora mantenemos los datos de ejemplo vacíos
-        List<EtiquetaDTO> etiquetasVacias = List.of();
-        List<ResumenDTO> resumenVacio = List.of();
+        // CONVERSIÓN DE LISTA A MAPA
+        // Se realizan estas validaciones solo por si acaso, ya que config ya viene con valores correctos
+        Map<Long, Vendedor> vendedoresMap = vendedoresList.stream()
+                .filter(v -> v.getId() != null) // Evitas nulos accidentales
+                .collect(Collectors.toMap(
+                        Vendedor::getId,
+                        vendedor -> vendedor,
+                        (existente, reemplazo) -> existente // Si hay IDs duplicados, mantiene el primero y no lanza excepción
+                ));
+        List<EtiquetaDTO> etiquetasMapeado = PdfMapper.toEtiquetaDTOs(config, vendedoresMap);
+        List<ResumenDTO> resumenMapeado = PdfMapper.toResumenDTOs(config, vendedoresMap);
 
-        // Construimos un string de fechas para pasar al generador (o pasas las fechas sueltas si actualizas ese servicio)
-        String fechasTexto = String.format("Seneté: %s | Telebingo: %s",
-                config.getFechaSorteoSenete(), config.getFechaSorteoTelebingo());
+        byte[] etiquetas = pdfEtiquetasService.generarEtiquetas(etiquetasMapeado, fechaSorteoSenete, fechaSorteoTelebingo);
+        byte[] resumen = pdfResumenService.generarResumen(resumenMapeado, fechaSorteoSenete, fechaSorteoTelebingo);
 
-        byte[] etiquetas = pdfEtiquetasService.generarEtiquetas(etiquetasVacias, fechasTexto);
-        byte[] resumen = pdfResumenService.generarResumen(resumenVacio, fechasTexto);
-
-        pdfProceso.setPdfEtiquetas(etiquetas);
-        pdfProceso.setPdfResumen(resumen);
-        pdfProceso.setEstado(EstadoEnum.COMPLETADO.getValue());
-    }
-
-    private void validarYFiltrarRangos(SimulacionRequestDTO config) {
-        // Validar y limpiar Pool Seneté
-        if (config.getPoolSenete() != null && !config.getPoolSenete().isEmpty()) {
-            config.setPoolSenete(procesarListaRangos(config.getPoolSenete(), "Seneté"));
+        if (etiquetas == null || resumen == null) {
+            throw new FileProcessingException("No se encontraron archivos PDF generados.", List.of());
         }
 
-        // Validar y limpiar Pool Telebingo
-        if (config.getPoolTelebingo() != null && !config.getPoolTelebingo().isEmpty()) {
-            config.setPoolTelebingo(procesarListaRangos(config.getPoolTelebingo(), "Telebingo"));
-        }
-    }
+        Map<String, byte[]> resultado = new HashMap<>();
+        resultado.put(ETIQUETAS, etiquetas);
+        resultado.put(RESUMEN, resumen);
 
-    /**
-     * Método auxiliar para filtrar inválidos, ordenar y verificar solapamientos
-     */
-    private List<RangoCortadoDTO> procesarListaRangos(List<RangoCortadoDTO> rangos, String nombreJuego) {
-        // 1. Filtrar los que son 0-0 o inválidos y Ordenar
-        List<RangoCortadoDTO> validos = rangos.stream()
-                .filter(r -> r.getInicio() > 0 && r.getFin() > 0 && r.getInicio() <= r.getFin())
-                .sorted(Comparator.comparingInt(RangoCortadoDTO::getInicio))
-                .collect(Collectors.toList());
-
-        // 2. Revisar solapamientos
-        reviewSolapamientos(validos, nombreJuego);
-
-        return validos;
-    }
-
-    public void reviewSolapamientos(List<RangoCortadoDTO> validos, String nombreJuego) {
-        for (int i = 0; i < validos.size() - 1; i++) {
-            if (validos.get(i).getFin() >= validos.get(i + 1).getInicio()) {
-                throw new PdfCreationException("Validación de Rangos (" + nombreJuego + ")",
-                        List.of("Los rangos " + validos.get(i).getInicio() + "-" + validos.get(i).getFin() +
-                                " y " + validos.get(i+1).getInicio() + "-" + validos.get(i+1).getFin() + " se solapan."));
-            }
-        }
+        return resultado;
     }
 }

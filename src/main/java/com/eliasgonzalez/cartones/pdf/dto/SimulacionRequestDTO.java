@@ -37,7 +37,7 @@ public class SimulacionRequestDTO {
     private boolean mezclar = true;
 
 
-    // --- SETTERS MANUALES (Lombok NO los sobrescribe) ---
+    // --- SETTERS MANUALES (Lombok NO sobrescribe estos) ---
 
     @JsonProperty("inicioSenete")
     public void setInicioSeneteGral(Integer inicioSeneteGral) {

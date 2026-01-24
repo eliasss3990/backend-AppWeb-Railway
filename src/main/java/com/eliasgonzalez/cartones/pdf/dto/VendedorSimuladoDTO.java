@@ -17,4 +17,7 @@ public class VendedorSimuladoDTO {
     private List<String> rangosSenete;
     private List<String> rangosTelebingo;
 
+    // Saldo
+    private String deuda;
+
 }
