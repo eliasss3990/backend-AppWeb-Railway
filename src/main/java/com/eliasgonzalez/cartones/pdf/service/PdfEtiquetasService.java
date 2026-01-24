@@ -16,66 +16,91 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * Servicio encargado de la generación física del documento PDF conteniendo las etiquetas
+ * de distribución para los vendedores.
+ * <p>
+ * Utiliza la librería OpenPDF (com.lowagie) para el dibujo de bajo nivel (canvas).
+ * Diseño optimizado para hoja A4 con 3 etiquetas por página.
+ */
 @Service
 @Transactional
 public class PdfEtiquetasService {
 
+    /**
+     * Genera un arreglo de bytes (PDF) con las etiquetas formateadas.
+     *
+     * @param etiquetas      Lista de DTOs con la información de cada vendedor.
+     * @param fechaSenete    Fecha del sorteo de Seneté.
+     * @param fechaTelebingo Fecha del sorteo de Telebingo.
+     * @return byte[] conteniendo el archivo PDF.
+     */
     public byte[] generarEtiquetas(List<EtiquetaDTO> etiquetas, LocalDate fechaSenete, LocalDate fechaTelebingo) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            // Configuración del documento A4 sin márgenes automáticos (manejados manualmente)
             Document document = new Document(PageSize.A4);
             PdfWriter writer = PdfWriter.getInstance(document, baos);
 
             document.open();
             PdfContentByte cb = writer.getDirectContent();
 
-            // --- CONFIGURACIÓN DE DIMENSIONES ---
+            // --- 1. CONFIGURACIÓN DE DIMENSIONES Y CONSTANTES ---
             float width = PageSize.A4.getWidth();
             float height = PageSize.A4.getHeight();
-            float margen = 20;
-            float espV = 15; // Espacio vertical entre etiquetas
-            float altoEt = (height - 2 * margen - 2 * espV) / 3;
-            float mitad = (width - 2 * margen) / 2;
+            float margen = 20;    // Margen lateral de la hoja
+            float espV = 15;      // Espacio vertical entre etiquetas
 
-            // --- FUENTES ---
+            // Cálculo: (AltoTotal - MárgenesSupInf - EspaciosEntreEtiquetas) / 3 etiquetas
+            float altoEt = (height - 2 * margen - 2 * espV) / 3;
+
+            // --- 2. DEFINICIÓN DE FUENTES ---
             BaseFont helv = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
             BaseFont bold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
 
-            // --- PREPARACIÓN DE FECHAS ---
+            // --- 3. FORMATEO DE FECHAS ---
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             String txtFechaSenete = fechaSenete.format(fmt);
             String txtFechaTelebingo = fechaTelebingo.format(fmt);
             boolean fechasIguales = fechaSenete.isEqual(fechaTelebingo);
 
+            // --- 4. BUCLE DE GENERACIÓN ---
             for (int i = 0; i < etiquetas.size(); i++) {
                 EtiquetaDTO item = etiquetas.get(i);
 
-                // Cálculo de la posición Y base de la etiqueta actual (invertida)
+                // Cálculo de la posición Y base de la etiqueta actual (Coordenadas iText: 0,0 es abajo-izq)
+                // Se invierte la lógica para dibujar de arriba hacia abajo.
                 float y = height - margen - ((i % 3) + 1) * altoEt - (i % 3) * espV;
 
-                // 1. RECUADRO EXTERIOR
+                // A. RECUADRO EXTERIOR
                 cb.setLineWidth(1f);
                 cb.rectangle(margen, y, width - 2 * margen, altoEt);
                 cb.stroke();
 
-                // 2. NÚMERO DE VENDEDOR (Esquina Superior Derecha)
+                // B. NÚMERO DE VENDEDOR (Esquina Superior Derecha)
                 cb.beginText();
                 cb.setFontAndSize(bold, 24);
-                // Pegado al margen derecho (margen - 5)
+                // Alineado a la derecha con un padding de 5pt
                 cb.showTextAligned(Element.ALIGN_RIGHT, "#" + item.getNumeroVendedor(), width - margen - 5, y + altoEt - 25, 0);
                 cb.endText();
 
-                // 3. CABECERA IZQUIERDA (Datos Distribuidor)
+                // C. CABECERA IZQUIERDA (Datos Fijos del Distribuidor)
                 cb.beginText();
                 cb.setFontAndSize(bold, 10);
                 cb.setTextMatrix(margen + 10, y + altoEt - 20);
                 cb.showText("ROBERTO GONZÁLEZ");
+
                 cb.setTextMatrix(margen + 10, y + altoEt - 35);
                 cb.showText("DIST - ITAUGUÁ - PY");
+
                 cb.setTextMatrix(margen + 10, y + altoEt - 50);
                 cb.showText("0983 433572");
+                cb.endText();
 
-                // 4. CABECERA DERECHA (Fechas)
-                float xFechas = width - margen - 65;
+                // D. CABECERA DERECHA (Fechas de Sorteo)
+                cb.beginText();
+                cb.setFontAndSize(bold, 10);
+                float xFechas = width - margen - 65; // Posición X para las fechas
 
                 if (fechasIguales) {
                     cb.showTextAligned(Element.ALIGN_RIGHT, "SORTEO: " + txtFechaSenete, xFechas, y + altoEt - 35, 0);
@@ -85,38 +110,46 @@ public class PdfEtiquetasService {
                 }
                 cb.endText();
 
-                // LÍNEA SEPARADORA ENCABEZADO
+                // E. LÍNEA DIVISORIA (Separa cabecera del cuerpo)
                 cb.moveTo(margen, y + altoEt - 60);
                 cb.lineTo(width - margen, y + altoEt - 60);
                 cb.stroke();
 
-                // 5. NOMBRE DEL VENDEDOR (Grande y Centrado)
+                // F. NOMBRE DEL VENDEDOR (Grande y Centrado)
                 cb.beginText();
-                cb.setFontAndSize(bold, 15);
-                cb.showTextAligned(Element.ALIGN_CENTER, item.getNombre() != null ? item.getNombre().toUpperCase() : "", width / 2, y + altoEt - 85, 0);
+                cb.setFontAndSize(bold, 14);
+                // Posición Y ajustada a -80 del tope de la etiqueta
+                cb.showTextAligned(Element.ALIGN_CENTER, item.getNombre() != null ? item.getNombre().toUpperCase() : "", width / 2, y + altoEt - 80, 0);
                 cb.endText();
 
-                // 6. COLUMNAS DINÁMICAS (Listas de Rangos)
-                // Seneté (Izquierda)
-                dibujarColumnaDinamica(cb, "SENETÉ", item.getSeneteRangos(), item.getSeneteCartones(), item.getResultadoSenete(),
-                        margen + 20, y + altoEt - 110, helv, bold);
+                // G. COLUMNAS DE DETALLE (Lógica de Simetría)
+                // Definimos los centros de las columnas equidistantes de los márgenes
+                float xCentroSenete = margen + 80;
+                float xCentroTelebingo = width - margen - 80;
 
-                // Telebingo (Derecha)
-                dibujarColumnaDinamica(cb, "TELEBINGO", item.getTelebingoRangos(), item.getTelebingoCartones(), item.getResultadoTelebingo(),
-                        margen + mitad + 20, y + altoEt - 110, helv, bold);
+                // AJUSTE VISUAL: Bajamos el inicio de las columnas (-120) para dar aire respecto al nombre
+                float yInicioColumnas = y + altoEt - 120;
 
+                // Dibujar Columna Izquierda (Seneté)
+                dibujarColumnaCentrada(cb, "SENETÉ", item.getSeneteRangos(), item.getSeneteCartones(), item.getResultadoSenete(),
+                        xCentroSenete, yInicioColumnas, helv, bold);
 
-                // 7. SALDO (Fijo abajo al centro con prefijo "Gs.")
+                // Dibujar Columna Derecha (Telebingo)
+                dibujarColumnaCentrada(cb, "TELEBINGO", item.getTelebingoRangos(), item.getTelebingoCartones(), item.getResultadoTelebingo(),
+                        xCentroTelebingo, yInicioColumnas, helv, bold);
+
+                // H. SALDO (Centrado en la parte inferior)
+                // AJUSTE VISUAL: Subimos el saldo (+60 y +45) para alejarlo del borde inferior
                 cb.beginText();
                 cb.setFontAndSize(bold, 12);
-                cb.showTextAligned(Element.ALIGN_CENTER, "SALDO", width / 2, y + 45, 0);
+                cb.showTextAligned(Element.ALIGN_CENTER, "SALDO", width / 2, y + 60, 0);
 
                 cb.setFontAndSize(helv, 11);
-                // Agregamos "Gs."
-                cb.showTextAligned(Element.ALIGN_CENTER, "Gs. " + (item.getSaldo() != null ? item.getSaldo() : "0"), width / 2, y + 30, 0);
+                cb.showTextAligned(Element.ALIGN_CENTER, "Gs. " + (item.getSaldo() != null ? item.getSaldo() : "0"), width / 2, y + 45, 0);
                 cb.endText();
 
-                // PAGINACIÓN (Cada 3 etiquetas, nueva hoja)
+                // I. PAGINACIÓN
+                // Crea una nueva página cada 3 etiquetas, excepto en la última iteración
                 if ((i + 1) % 3 == 0 && (i + 1) < etiquetas.size()) {
                     document.newPage();
                 }
@@ -126,52 +159,65 @@ public class PdfEtiquetasService {
             return baos.toByteArray();
 
         } catch (Exception e) {
-            throw new PdfCreationException("Error generando el PDF de etiquetas", List.of(e.getMessage()));
+            throw new PdfCreationException("Error generando el PDF de etiquetas. Detalle: " + e.getMessage(), List.of(e.getMessage()));
         }
     }
 
     /**
-     * Dibuja una columna de producto (Título, Lista de Rangos, Total condicional y Resultados).
-     * @param x Coordenada X base de la columna
-     * @param yInicio Coordenada Y donde empieza el título
+     * Método auxiliar para dibujar una columna de datos (Rangos, Total, Resultados)
+     * perfectamente centrada sobre un eje X.
+     *
+     * @param cb        Lienzo del PDF.
+     * @param titulo    Título de la columna (ej: SENETÉ).
+     * @param rangos    Lista de rangos a imprimir.
+     * @param total     Texto del total de cartones.
+     * @param resultado Texto del resultado (devolución).
+     * @param xCentro   Coordenada X central de la columna.
+     * @param yInicio   Coordenada Y superior donde inicia el título.
+     * @param fNorm     Fuente normal.
+     * @param fBold     Fuente negrita.
      */
-    private void dibujarColumnaDinamica(PdfContentByte cb, String titulo, List<String> rangos, String total, String resultado,
-                                        float x, float yInicio, BaseFont fNorm, BaseFont fBold) {
+    private void dibujarColumnaCentrada(PdfContentByte cb, String titulo, List<String> rangos, String total, String resultado,
+                                        float xCentro, float yInicio, BaseFont fNorm, BaseFont fBold) {
         float curY = yInicio;
 
         cb.beginText();
 
-        // Título Columna
+        // 1. TÍTULO DE COLUMNA
         cb.setFontAndSize(fBold, 11);
-        cb.showTextAligned(Element.ALIGN_CENTER, titulo, x + 40, curY, 0);
-        curY -= 15;
+        cb.showTextAligned(Element.ALIGN_CENTER, titulo, xCentro, curY, 0);
+        curY -= 15; // Salto de línea
 
-        // Lista de Rangos
+        // 2. LISTA DE RANGOS
         cb.setFontAndSize(fNorm, 10);
+
+        // Lógica de compresión: Si hay muchos rangos, reducimos la fuente para que quepan
+        if (rangos != null && rangos.size() > 4) {
+            cb.setFontAndSize(fNorm, 9);
+        }
+
         if (rangos != null) {
             for (String r : rangos) {
-                cb.showTextAligned(Element.ALIGN_LEFT, r, x, curY, 0);
-                curY -= 12; // Desplazamiento vertical por cada rango
+                cb.showTextAligned(Element.ALIGN_CENTER, r, xCentro, curY, 0);
+                curY -= 12; // Salto entre rangos
             }
         }
 
-        // Lógica Dinámica de TOTAL
-        // Solo mostramos la línea de total si hay más de 1 rango en la lista
-        if (rangos != null && rangos.size() > 1) {
-            cb.setFontAndSize(fBold, 10);
-            cb.showTextAligned(Element.ALIGN_LEFT, "TOTAL ------------> (" + total + ")", x, curY, 0);
-            curY -= 20; // Espacio extra antes de Resultados
-        } else {
-            curY -= 10; // Espacio normal
-        }
+        // 3. LÍNEA DE TOTAL (Siempre visible)
+        // Formato estandarizado: TOTAL ------------> (XX)
+        cb.setFontAndSize(fBold, 10);
+        String textoTotal = "TOTAL ------------> (" + (total != null ? total : "0") + ")";
+        cb.showTextAligned(Element.ALIGN_CENTER, textoTotal, xCentro, curY, 0);
 
-        // Título RESULTADOS (Posición depende de la cantidad de rangos)
+        // Espacio separador antes de la sección de Resultados
+        curY -= 25;
+
+        // 4. SECCIÓN RESULTADOS
         cb.setFontAndSize(fBold, 11);
-        cb.showTextAligned(Element.ALIGN_CENTER, "RESULTADOS", x + 40, curY, 0);
+        cb.showTextAligned(Element.ALIGN_CENTER, "RESULTADOS", xCentro, curY, 0);
 
-        // Valor RESULTADOS
         cb.setFontAndSize(fNorm, 11);
-        cb.showTextAligned(Element.ALIGN_CENTER, resultado != null ? resultado : "0", x + 40, curY - 15, 0);
+        cb.showTextAligned(Element.ALIGN_CENTER, resultado != null ? resultado : "0", xCentro, curY - 15, 0);
 
         cb.endText();
     }
