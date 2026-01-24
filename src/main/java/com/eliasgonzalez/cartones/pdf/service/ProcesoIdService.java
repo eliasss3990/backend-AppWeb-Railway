@@ -10,10 +10,12 @@ public class ProcesoIdService {
 
     public static void PendienteToVerificando(String procesoIdRecibido, PdfProcesos pdfProcesos) {
 
-        if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado())) {
+        if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado()) &&
+                !EstadoEnum.VERIFICANDO.getValue().equals(pdfProcesos.getEstado())
+        ) {
             throw new UnprocessableEntityException(
-                    "El proceso no está en estado PENDIENTE.",
-                    List.of("El proceso " + procesoIdRecibido + " tiene un estado " + pdfProcesos.getEstado())
+                    "El proceso no está en estado 'pendiente'.",
+                    List.of("El proceso " + procesoIdRecibido + " tiene un estado '" + pdfProcesos.getEstado() + "'")
             );
         }
 

@@ -35,12 +35,14 @@ public class DistribucionController {
     @PostMapping("/{procesoId}/simular")
     public ResponseEntity<List<VendedorSimuladoDTO>> simularDistribucion(
             @RequestBody SimulacionRequestDTO request,
-            @PathVariable String procesoIdRecibido) {
+            @PathVariable(name = "procesoId") String procesoIdRecibido) {
 
         PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
-                .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", null));
+                .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", List.of()));
 
         ProcesoIdService.PendienteToVerificando(procesoIdRecibido, pdfProcesos);
+
+        pdfProcesosRepo.save(pdfProcesos);
 
         List<VendedorSimuladoDTO> simulacion = distribucionService.simularDistribucion(request);
 
@@ -53,7 +55,7 @@ public class DistribucionController {
     }
 
 
-    @PostMapping("/{procesoId}/crear-pdf")
+    @GetMapping("/{procesoId}/pdf")
     public ResponseEntity<Resource> guardarDistribucion(@PathVariable(name = "procesoId") String procesoIdRecibido){
 
         // Recuperar de memoria usando la instancia inyectada
@@ -62,7 +64,7 @@ public class DistribucionController {
         LocalDate fechaSorteoTelebingo = saveInMemoryTemp.getFechaSorteoTelebingo();
 
         PdfProcesos pdfProcesos = pdfProcesosRepo.findById(procesoIdRecibido)
-                .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", null));
+                .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoIdRecibido + " no existe.", List.of()));
 
         try{
             Resource zip = pdfService.obtenerZipPdfs(

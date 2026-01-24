@@ -54,8 +54,7 @@ public class PdfService implements IPdfService {
             byte[] etiquetas = pdfsGenerados.get(ETIQUETAS);
             byte[] resumen = pdfsGenerados.get(RESUMEN);
 
-            if (!EstadoEnum.PENDIENTE.getValue().equals(pdfProcesos.getEstado()) &&
-                    !EstadoEnum.COMPLETADO.getValue().equals(pdfProcesos.getEstado())) {
+            if (!EstadoEnum.VERIFICANDO.getValue().equals(pdfProcesos.getEstado())) {
                 throw new UnprocessableEntityException("El estado del proceso no es válido para descarga.", List.of("Estado: " + pdfProcesos.getEstado()));
             }
 

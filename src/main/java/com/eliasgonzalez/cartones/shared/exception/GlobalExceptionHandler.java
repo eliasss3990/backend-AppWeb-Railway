@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.List;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -96,7 +98,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {
         System.out.println("\n\n########## ¡ATENCIÓN! EL MANEJADOR DE EXCEPCIONES SE ESTÁ EJECUTANDO. ##########\n\n");
-        ex.printStackTrace(); // <-- AÑADIDO PARA DEBUGGING
+        ex.printStackTrace(); // <-- PARA DEBUGGING
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
         ErrorResponse response = ErrorResponse
@@ -104,7 +106,7 @@ public class GlobalExceptionHandler {
                 .status(status.value())
                 .error("Error Interno del Servidor")
                 .message("Ocurrió un error inesperado. Consulte los logs del servidor.")
-                .details(null)
+                .details(List.of(ex.getMessage()))
                 .build();
 
         return new ResponseEntity<>(response, status);
