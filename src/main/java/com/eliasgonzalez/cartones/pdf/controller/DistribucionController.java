@@ -38,7 +38,7 @@ public class DistribucionController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"etiquetas-" + procesoId + ".zip\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"zip-" + procesoId + ".zip\"")
                 .contentLength(zip.contentLength())
                 .body(zip);
     }
