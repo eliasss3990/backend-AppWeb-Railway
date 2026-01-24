@@ -27,7 +27,7 @@ public class ProcesoIdService {
 
         if (!EstadoEnum.VERIFICANDO.getValue().equals(pdfProcesos.getEstado())) {
             throw new UnprocessableEntityException(
-                    "El proceso no está en estado VERIFICANDO.",
+                    "El proceso no está en estado 'verificando'.",
                     List.of("El proceso " + procesoIdRecibido + " tiene un estado " + pdfProcesos.getEstado())
             );
         }
