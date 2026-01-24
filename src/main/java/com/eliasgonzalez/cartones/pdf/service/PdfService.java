@@ -7,7 +7,6 @@ import com.eliasgonzalez.cartones.pdf.interfaces.IPdfService;
 import com.eliasgonzalez.cartones.pdf.interfaces.PdfProcesosRepository;
 import com.eliasgonzalez.cartones.pdf.mapper.PdfMapper;
 import com.eliasgonzalez.cartones.shared.exception.FileProcessingException;
-import com.eliasgonzalez.cartones.shared.exception.PdfCreationException;
 import com.eliasgonzalez.cartones.shared.exception.ResourceNotFoundException;
 import com.eliasgonzalez.cartones.shared.exception.UnprocessableEntityException;
 import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
