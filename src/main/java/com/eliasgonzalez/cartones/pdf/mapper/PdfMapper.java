@@ -5,6 +5,8 @@ import com.eliasgonzalez.cartones.pdf.dto.ResumenDTO;
 import com.eliasgonzalez.cartones.pdf.dto.VendedorSimuladoDTO;
 import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 public class PdfMapper {
@@ -13,6 +15,14 @@ public class PdfMapper {
             List<VendedorSimuladoDTO> vendedorSimuladoDTOs,
             Map<Long, Vendedor> vendedoresMap
     ) {
+
+        // Formateador de decimales
+        DecimalFormatSymbols simbolos = new DecimalFormatSymbols(Locale.getDefault());
+        simbolos.setGroupingSeparator('.'); // Separador de miles: punto
+
+        // Creamos el formato: "#,###"
+        DecimalFormat df = new DecimalFormat("#,###", simbolos);
+
         List<EtiquetaDTO> etiquetaDTOs = new ArrayList<>();
 
         for (int i = 0; i < vendedorSimuladoDTOs.size(); i++){
@@ -30,7 +40,7 @@ public class PdfMapper {
             String resSenete = (vendedor.getResultadoSenete() != null) ? vendedor.getResultadoSenete().toString() : "0";
             String cantTelebingo = (vendedor.getCantidadTelebingo() != null) ? vendedor.getCantidadTelebingo().toString() : "0";
             String resTelebingo = (vendedor.getResultadoTelebingo() != null) ? vendedor.getResultadoTelebingo().toString() : "0";
-            String saldo = (vendedor.getDeuda() != null) ? vendedor.getDeuda().toString() : "0";
+            String saldo = (vendedor.getDeuda() != null) ? df.format(vendedor.getDeuda()) : "0";
 
             etiquetaDTOs.add(EtiquetaDTO.builder()
                     .numeroVendedor(i + 1)
