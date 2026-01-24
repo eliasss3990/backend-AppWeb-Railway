@@ -55,7 +55,7 @@ public class DistribucionController {
     }
 
 
-    @GetMapping("/{procesoId}/pdf")
+    @GetMapping("/{procesoId}/pdfs")
     public ResponseEntity<Resource> guardarDistribucion(@PathVariable(name = "procesoId") String procesoIdRecibido){
 
         // Recuperar de memoria usando la instancia inyectada

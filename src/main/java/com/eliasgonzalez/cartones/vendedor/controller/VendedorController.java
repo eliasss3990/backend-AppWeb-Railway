@@ -22,10 +22,11 @@ public class VendedorController {
         return ResponseEntity.ok(vendedorService.listaVendedores());
     }
 
-    @GetMapping
-    public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (){
-        List<VendedorResponseDTO> vendedores = vendedorService.listarVendedoresValidos();
-        return ResponseEntity.ok(vendedores);
+    @GetMapping("/{procesoId}")
+    public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (
+            @PathVariable (name = "procesoId") String procesoIdCreado){
+
+        return ResponseEntity.ok(vendedorService.listarVendedoresValidos(procesoIdCreado));
     }
 
     @DeleteMapping

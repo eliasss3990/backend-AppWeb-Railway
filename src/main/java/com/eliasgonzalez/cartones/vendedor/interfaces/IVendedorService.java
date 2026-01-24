@@ -11,7 +11,7 @@ public interface IVendedorService {
     // GET
     List<VendedorResponseDTO> listaVendedores ();
 
-    List<VendedorResponseDTO> listarVendedoresValidos ();
+    List<VendedorResponseDTO> listarVendedoresValidos (String procesoIdCreado);
 
     // DELETE
     void eliminarTodosLosVendedores ();

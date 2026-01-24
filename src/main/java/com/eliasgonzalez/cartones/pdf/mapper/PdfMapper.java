@@ -21,16 +21,21 @@ public class PdfMapper {
             // Recuperamos la entidad real usando el ID del DTO
             Vendedor vendedor = vendedoresMap.get(simulado.getId());
 
+            if (vendedor == null){
+                throw new NullPointerException("El vendedor es null");
+            }
+
             // Validación de seguridad por si no existe el ID en el mapa (evita NullPointerException)
-            String cantSenete = (vendedor != null && vendedor.getCantidadSenete() != null) ? vendedor.getCantidadSenete().toString() : "0";
-            String resSenete = (vendedor != null && vendedor.getResultadoSenete() != null) ? vendedor.getResultadoSenete().toString() : "0";
-            String cantTelebingo = (vendedor != null && vendedor.getCantidadTelebingo() != null) ? vendedor.getCantidadTelebingo().toString() : "0";
-            String resTelebingo = (vendedor != null && vendedor.getResultadoTelebingo() != null) ? vendedor.getResultadoTelebingo().toString() : "0";
+            String cantSenete = (vendedor.getCantidadSenete() != null) ? vendedor.getCantidadSenete().toString() : "0";
+            String resSenete = (vendedor.getResultadoSenete() != null) ? vendedor.getResultadoSenete().toString() : "0";
+            String cantTelebingo = (vendedor.getCantidadTelebingo() != null) ? vendedor.getCantidadTelebingo().toString() : "0";
+            String resTelebingo = (vendedor.getResultadoTelebingo() != null) ? vendedor.getResultadoTelebingo().toString() : "0";
+            String saldo = (vendedor.getDeuda() != null) ? vendedor.getDeuda().toString() : "0";
 
             etiquetaDTOs.add(EtiquetaDTO.builder()
                     .numeroVendedor(i + 1)
                     .nombre(simulado.getNombre())
-                    .saldo(simulado.getDeuda())
+                    .saldo(saldo)
 
                     // Datos Seneté
                     .seneteRangos(simulado.getRangosSenete())
@@ -61,9 +66,13 @@ public class PdfMapper {
             // Recuperamos la entidad real
             Vendedor vendedor = vendedoresMap.get(simulado.getId());
 
+            if (vendedor == null){
+                throw new NullPointerException("El vendedor es null");
+            }
+
             // Validación de nulos para enteros
-            int cantSenete = (vendedor != null && vendedor.getCantidadSenete() != null) ? vendedor.getCantidadSenete() : 0;
-            int cantTelebingo = (vendedor != null && vendedor.getCantidadTelebingo() != null) ? vendedor.getCantidadTelebingo() : 0;
+            int cantSenete = (vendedor.getCantidadSenete() != null) ? vendedor.getCantidadSenete() : 0;
+            int cantTelebingo = (vendedor.getCantidadTelebingo() != null) ? vendedor.getCantidadTelebingo() : 0;
 
             Map<String, String> rangosSenete = extraerRangos(simulado.getRangosSenete());
             Map<String, String> rangosTelebingo = extraerRangos(simulado.getRangosTelebingo());
