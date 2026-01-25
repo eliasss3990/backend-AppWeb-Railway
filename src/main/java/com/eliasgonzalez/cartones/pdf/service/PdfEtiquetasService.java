@@ -38,6 +38,16 @@ public class PdfEtiquetasService {
     public byte[] generarEtiquetas(List<EtiquetaDTO> etiquetas, LocalDate fechaSenete, LocalDate fechaTelebingo) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
+            // Si la lista de etiquetas está vacía, genera un PDF vacío válido.
+            if (etiquetas == null || etiquetas.isEmpty()) {
+                Document document = new Document(PageSize.A4);
+                PdfWriter.getInstance(document, baos);
+                document.open();
+                document.add(new com.lowagie.text.Paragraph("No hay etiquetas para generar.")); // Añadir al menos algo
+                document.close();
+                return baos.toByteArray();
+            }
+
             // Configuración del documento A4 sin márgenes automáticos (manejados manualmente)
             Document document = new Document(PageSize.A4);
             PdfWriter writer = PdfWriter.getInstance(document, baos);

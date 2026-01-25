@@ -39,6 +39,18 @@ public class PdfResumenService {
             Document document = new Document(PageSize.A4);
             PdfWriter writer = PdfWriter.getInstance(document, baos);
             document.open();
+
+            // Si la lista de vendedores está vacía, genera un PDF vacío válido.
+            if (vendedores == null || vendedores.isEmpty()) {
+                document.add(new com.lowagie.text.Paragraph("No hay resumen de vendedores para generar.")); // Añadir al menos algo
+                document.close();
+                return baos.toByteArray();
+            }
+            
+            // Asegurarse de que haya al menos una página para el contenido
+            document.newPage(); 
+
+            // Continuar con la lógica normal si hay vendedores
             PdfContentByte cb = writer.getDirectContent();
 
             float width = PageSize.A4.getWidth();
