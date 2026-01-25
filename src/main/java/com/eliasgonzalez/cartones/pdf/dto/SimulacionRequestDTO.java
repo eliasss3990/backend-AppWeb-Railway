@@ -3,6 +3,7 @@ package com.eliasgonzalez.cartones.pdf.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.DayOfWeek;
@@ -26,6 +27,7 @@ public class SimulacionRequestDTO {
 
     // Lista de vendedores
     @Valid
+    @NotNull
     private List<VendedorInputDTO> vendedores;
 
     // Fechas
