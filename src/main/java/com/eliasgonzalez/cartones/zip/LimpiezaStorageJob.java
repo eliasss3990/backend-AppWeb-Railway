@@ -1,5 +1,6 @@
 package com.eliasgonzalez.cartones.zip;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
@@ -10,10 +11,14 @@ import java.util.stream.Stream;
 @Component
 public class LimpiezaStorageJob {
 
+    private final Path storageDir;
+
+    public LimpiezaStorageJob(@Value("${app.storage.directory:storage}") String storageDirectory) {
+        this.storageDir = Paths.get(storageDirectory);
+    }
+
     @Scheduled(cron = "0 0 0 1 1/3 ?")
     public void ejecutarLimpiezaTrimestral() {
-        Path storageDir = Paths.get("storage");
-
         if (!Files.exists(storageDir)) return;
 
         try (Stream<Path> s = Files.walk(storageDir)) {
