@@ -63,6 +63,8 @@ public class PdfService implements IPdfService {
 
         } catch (IOException e) {
             throw new FileProcessingException("Error generando ZIP", List.of(e.getMessage()));
+        } catch (UnprocessableEntityException e) {
+            throw e; // Relanzar la excepción específica
         } catch (Exception e) {
             throw new FileProcessingException("Error inesperado en PDF Service", List.of(e.getMessage()));
         }
