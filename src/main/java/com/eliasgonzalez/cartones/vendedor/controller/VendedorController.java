@@ -16,12 +16,6 @@ public class VendedorController {
 
     private final IVendedorService vendedorService;
 
-    // TODO: eliminar luego de pruebas
-    @GetMapping("/vendedoresTemporal")
-    public ResponseEntity<List<VendedorResponseDTO>> listarVendedores (){
-        return ResponseEntity.ok(vendedorService.listaVendedores());
-    }
-
     @GetMapping("/{procesoId}")
     public ResponseEntity<List<VendedorResponseDTO>> listarVendedoresValidos (
             @PathVariable (name = "procesoId") String procesoIdRecibido

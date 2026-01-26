@@ -2,7 +2,6 @@ package com.eliasgonzalez.cartones.vendedor.controller;
 
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorResponseDTO;
 import com.eliasgonzalez.cartones.vendedor.interfaces.IVendedorService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,40 +41,6 @@ class VendedorControllerTest {
 
     @MockBean
     private IVendedorService vendedorService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @DisplayName("GET /api/vendedores/vendedoresTemporal - Happy Path")
-    @Test
-    void testListarVendedores_happyPath() throws Exception {
-        // Arrange
-        List<VendedorResponseDTO> mockResponse = Arrays.asList(
-                VendedorResponseDTO.builder().id(1L).nombre("Vendedor Uno").build(),
-                VendedorResponseDTO.builder().id(2L).nombre("Vendedor Dos").build()
-        );
-        when(vendedorService.listaVendedores()).thenReturn(mockResponse);
-
-        // Act & Assert
-        mockMvc.perform(get("/api/vendedores/vendedoresTemporal")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nombre").value("Vendedor Uno"))
-                .andExpect(jsonPath("$[1].nombre").value("Vendedor Dos"));
-    }
-
-    @DisplayName("GET /api/vendedores/vendedoresTemporal - Excepción de servicio")
-    @Test
-    void testListarVendedores_serviceException() throws Exception {
-        // Arrange
-        when(vendedorService.listaVendedores()).thenThrow(new RuntimeException("Error simulado en el servicio"));
-
-        // Act & Assert
-        mockMvc.perform(get("/api/vendedores/vendedoresTemporal")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").value("Error Interno del Servidor"));
-    }
 
     @DisplayName("GET /api/vendedores/{procesoId} - Happy Path")
     @Test
