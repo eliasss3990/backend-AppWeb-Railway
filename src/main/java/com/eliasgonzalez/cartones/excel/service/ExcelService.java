@@ -8,7 +8,6 @@ import com.eliasgonzalez.cartones.shared.exception.ExcelProcessingException;
 import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
 import com.eliasgonzalez.cartones.vendedor.interfaces.VendedorRepository;
 import com.eliasgonzalez.cartones.shared.util.Util;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
@@ -24,6 +23,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 /**
  * Servicio encargado de la orquestación (I/O) y persistencia de datos
@@ -39,7 +39,13 @@ public class ExcelService implements IExcelService {
 
     @Override
     @Transactional // Si ocurre una RuntimeException, se revierte todo
-    public void leerExcel(MultipartFile file, String procesoIdCreado) {
+    public void leerExcel(MultipartFile file, String procesoIdCreado){
+
+        // PRE-VALIDACIÓN: Antes de tocar el InputStream
+        if (file == null || file.isEmpty()) {
+            logger.error("El archivo recibido es nulo o está vacío.");
+            throw new ExcelProcessingException("El archivo recibido es nulo o está vacío.", List.of());
+        }
 
         logger.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
 
