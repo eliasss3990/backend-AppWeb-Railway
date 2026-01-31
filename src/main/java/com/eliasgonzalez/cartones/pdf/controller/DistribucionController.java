@@ -18,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/distribuciones")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "${app.cors.origins}")
 public class DistribucionController {
 
     private final GestionDistribucionService gestionDistribucion;

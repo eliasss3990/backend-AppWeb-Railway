@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/vendedores")
+@CrossOrigin(origins = "${app.cors.origins}")
 public class VendedorController {
 
     private final IVendedorService vendedorService;
