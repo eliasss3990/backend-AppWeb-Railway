@@ -30,6 +30,8 @@ Desktop.ini  # Windows
 # Ignorar el archivo de configuración real
 .env
 *.env
+/.env.dev
+/.env.prod
 
 # Pero permitir la plantilla de ejemplo (para documentación)
 !.env.example
@@ -81,7 +83,3 @@ mongo_data/
 # =================================================================
 /coverage/
 *.exec
-/secrets_store/
-/secrets_store/
-/.env.dev
-/.env.prod
