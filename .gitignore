@@ -81,3 +81,5 @@ mongo_data/
 # =================================================================
 /coverage/
 *.exec
+/secrets_store/
+/secrets_store/

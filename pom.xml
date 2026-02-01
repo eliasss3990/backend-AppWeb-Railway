@@ -76,13 +76,6 @@
             <version>2.3.0</version>
         </dependency>
 
-        <!-- Solo para desarrollo local -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope> <!-- Solo en tiempo de ejecución -->
-        </dependency>
-
     </dependencies>
 
     <build>
