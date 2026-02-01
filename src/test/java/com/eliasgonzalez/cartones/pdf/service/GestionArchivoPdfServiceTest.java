@@ -56,7 +56,7 @@ class GestionArchivoPdfServiceTest {
     @Test
     void testGenerarPaqueteZip_happyPath() {
         // Arrange
-        when(gestionDistribucionService.buscarProcesoOError(anyString())).thenReturn(mockPdfProcesos);
+        when(gestionDistribucionService.buscarProceso(anyString())).thenReturn(mockPdfProcesos);
         when(saveInMemoryTemp.getVendedorSimuladoDTOs()).thenReturn(Collections.emptyList());
         when(saveInMemoryTemp.getFechaSorteoSenete()).thenReturn(LocalDate.now());
         when(saveInMemoryTemp.getFechaSorteoTelebingo()).thenReturn(LocalDate.now());
@@ -72,7 +72,7 @@ class GestionArchivoPdfServiceTest {
             // Assert
             assertThat(result).isEqualTo(mockZipResource);
 
-            verify(gestionDistribucionService, times(1)).buscarProcesoOError(procesoId);
+            verify(gestionDistribucionService, times(1)).buscarProceso(procesoId);
             verify(saveInMemoryTemp, times(1)).getVendedorSimuladoDTOs();
             verify(saveInMemoryTemp, times(1)).getFechaSorteoSenete();
             verify(saveInMemoryTemp, times(1)).getFechaSorteoTelebingo();
@@ -87,14 +87,14 @@ class GestionArchivoPdfServiceTest {
     void testGenerarPaqueteZip_exceptionOnBuscarProceso() {
         // Arrange
         RuntimeException mockException = new RuntimeException("Proceso no encontrado");
-        when(gestionDistribucionService.buscarProcesoOError(anyString())).thenThrow(mockException);
+        when(gestionDistribucionService.buscarProceso(anyString())).thenThrow(mockException);
 
         // Act & Assert
         assertThatThrownBy(() -> gestionArchivoPdfService.generarPaqueteZip(procesoId))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Proceso no encontrado");
 
-        verify(gestionDistribucionService, times(1)).buscarProcesoOError(procesoId);
+        verify(gestionDistribucionService, times(1)).buscarProceso(procesoId);
         verifyNoInteractions(pdfService);
         verifyNoInteractions(saveInMemoryTemp);
         verifyNoInteractions(pdfProcesosRepo);
@@ -104,7 +104,7 @@ class GestionArchivoPdfServiceTest {
     @Test
     void testGenerarPaqueteZip_exceptionOnObtenerZipPdfs() {
         // Arrange
-        when(gestionDistribucionService.buscarProcesoOError(anyString())).thenReturn(mockPdfProcesos);
+        when(gestionDistribucionService.buscarProceso(anyString())).thenReturn(mockPdfProcesos);
         when(saveInMemoryTemp.getVendedorSimuladoDTOs()).thenReturn(Collections.emptyList());
         when(saveInMemoryTemp.getFechaSorteoSenete()).thenReturn(LocalDate.now());
         when(saveInMemoryTemp.getFechaSorteoTelebingo()).thenReturn(LocalDate.now());
@@ -117,7 +117,7 @@ class GestionArchivoPdfServiceTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Error al generar ZIP de PDFs");
 
-        verify(gestionDistribucionService, times(1)).buscarProcesoOError(procesoId);
+        verify(gestionDistribucionService, times(1)).buscarProceso(procesoId);
         verify(saveInMemoryTemp, times(1)).getVendedorSimuladoDTOs();
         verify(saveInMemoryTemp, times(1)).getFechaSorteoSenete();
         verify(saveInMemoryTemp, times(1)).getFechaSorteoTelebingo();

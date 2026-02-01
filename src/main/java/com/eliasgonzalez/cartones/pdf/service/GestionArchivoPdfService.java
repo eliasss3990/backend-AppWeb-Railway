@@ -20,7 +20,7 @@ public class GestionArchivoPdfService {
 
     @Transactional
     public Resource generarPaqueteZip(String procesoId) {
-        PdfProcesos proceso = gestionDistribucionService.buscarProcesoOError(procesoId);
+        PdfProcesos proceso = gestionDistribucionService.buscarProceso(procesoId);
 
         Resource zip = pdfService.obtenerZipPdfs(
                 procesoId,

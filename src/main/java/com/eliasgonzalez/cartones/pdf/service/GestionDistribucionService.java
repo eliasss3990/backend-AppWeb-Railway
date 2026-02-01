@@ -7,6 +7,7 @@ import com.eliasgonzalez.cartones.pdf.entity.PdfProcesos;
 import com.eliasgonzalez.cartones.pdf.interfaces.PdfProcesosRepository;
 import com.eliasgonzalez.cartones.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GestionDistribucionService {
 
     private final DistribucionService distribucionService;
@@ -23,7 +25,8 @@ public class GestionDistribucionService {
     @Transactional
     public List<VendedorSimuladoDTO> procesarSimulacion(String procesoId, SimulacionRequestDTO solicitud) {
         // 1. Validar existencia del proceso
-        PdfProcesos proceso = buscarProcesoOError(procesoId);
+        PdfProcesos proceso = buscarProceso(procesoId);
+        log.info("Proceso encontrado: {}", proceso.toString());
 
         // 2. Actualizar estado del proceso
         ProcesoIdService.PendienteToVerificando(procesoId, proceso);
@@ -31,6 +34,8 @@ public class GestionDistribucionService {
 
         // 3. Ejecutar la lógica para la simulación
         List<VendedorSimuladoDTO> resultado = distribucionService.simularDistribucion(solicitud);
+
+        log.info("Proceso actualizado: {}", proceso.toString());
 
         // 4. Persistir temporalmente para la descarga posterior
         saveInMemoryTemp.guardar(resultado);
@@ -40,7 +45,7 @@ public class GestionDistribucionService {
         return resultado;
     }
 
-    public PdfProcesos buscarProcesoOError(String procesoId) {
+    public PdfProcesos buscarProceso(String procesoId) {
         return pdfProcesosRepo.findById(procesoId)
                 .orElseThrow(() -> new ResourceNotFoundException("El proceso con ID " + procesoId + " no existe.", List.of()));
     }

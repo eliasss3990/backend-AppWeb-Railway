@@ -66,4 +66,18 @@ public class SimulacionRequestDTO {
                 ? LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY))
                 : fechaSorteoTelebingo;
     }
+
+    @Override
+    public String toString() {
+        return "SimulacionRequestDTO{" +
+                "poolSenete=" + poolSenete +
+                ", poolTelebingo=" + poolTelebingo +
+                ", inicioSeneteGral=" + inicioSeneteGral +
+                ", inicioTelebingoGral=" + inicioTelebingoGral +
+                ", vendedores=" + vendedores +
+                ", fechaSorteoSenete=" + fechaSorteoSenete +
+                ", fechaSorteoTelebingo=" + fechaSorteoTelebingo +
+                ", mezclar=" + mezclar +
+                '}';
+    }
 }

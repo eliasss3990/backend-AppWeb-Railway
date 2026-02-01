@@ -2,6 +2,7 @@ package com.eliasgonzalez.cartones.pdf.service;
 
 import com.eliasgonzalez.cartones.pdf.dto.*;
 import com.eliasgonzalez.cartones.pdf.dto.RangoLogico;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,11 +10,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @Transactional
 public class DistribucionService {
 
     // Margen amplio para permitir saltos grandes si el pool se genera automáticamente
-    private static final int MARGEN_SEGURIDAD = 20000;
+    private static final int MARGEN_SEGURIDAD = 100;
 
     public List<VendedorSimuladoDTO> simularDistribucion(SimulacionRequestDTO request) {
 
@@ -177,7 +179,10 @@ public class DistribucionService {
         if (inicioGeneral != null) {
             LinkedList<RangoLogico> poolAjustado = new LinkedList<>();
             // Multiplicamos x4 o x5 la demanda total para tener suficiente papel para quemar
-            int finCalculado = inicioGeneral + (demandaTotal * 4) + MARGEN_SEGURIDAD;
+
+            int finCalculado = inicioGeneral + demandaTotal + MARGEN_SEGURIDAD;
+            log.info("El fin calculado es: {}", finCalculado);
+
             poolAjustado.add(new RangoLogico(inicioGeneral, finCalculado));
             return poolAjustado;
         }

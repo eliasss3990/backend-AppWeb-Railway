@@ -1,33 +1,37 @@
-# USAMOS UNA IMAGEN BASE PARA COMPILAR EL CÓDIGO (Etapa Build)
+# -------------------------------------------------------------------
+# ETAPA 1: BUILD
+# -------------------------------------------------------------------
 FROM maven:3.9.6-eclipse-temurin-21 AS build
-
-# Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copiar pom.xml (Para que Maven use el cache de dependencias)
+# Copiamos pom y descargamos dependencias (Capa cacheada)
 COPY pom.xml .
-
-# Descargar las dependencias
 RUN mvn dependency:go-offline
 
-# Copiar el código fuente completo
+# Copiamos código y compilamos
 COPY src ./src
-
-# Compilar la aplicación Spring Boot y crear el JAR ejecutable
 RUN mvn package -DskipTests
 
 # -------------------------------------------------------------------
-
-# USAMOS UNA IMAGEN BASE LIGERA PARA LA EJECUCIÓN (Etapa Runtime)
+# ETAPA 2: RUNTIME (PRODUCCIÓN)
+# -------------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
 
-# Copiamos el JAR compilado desde la etapa 'build'
+# SEGURIDAD: Crear usuario 'spring' para no usar root
+RUN addgroup -S spring && adduser -S spring -G spring
+
+# Crear directorio de logs y asignar permisos
+RUN mkdir -p /app/logs && chown -R spring:spring /app/logs
+
+# Cambiar al usuario seguro
+USER spring:spring
+
+# Copiar el JAR compilado
 COPY --from=build /app/target/*.jar app.jar
 
-# Define el puerto que expone la aplicación Spring Boot
-ARG PORT_BACKEND
+# Informamos el puerto (documentación)
+EXPOSE 9001
 
-EXPOSE ${PORT_BACKEND}
-
-# Comando para ejecutar el JAR al iniciar el contenedor
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# EJECUCIÓN:
+# -XX:MaxRAMPercentage=75.0 -> Usa el 75% de la memoria del contenedor (evita OOM kills)
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

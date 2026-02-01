@@ -1,4 +1,4 @@
-### DEPENDENCIAS Y ARTEFACTOS DE BUILD (MAVEN/GRADLE) ###
+### DEPENDENCIAS Y ARTEFACTOS DE BUILD ###
 target/
 build/
 *.class
@@ -7,32 +7,40 @@ build/
 *.ear
 /bin/
 
-# Archivos de la envoltura de Maven
+# Maven Wrapper (Mantenemos esto para que otros puedan compilar sin instalar Maven)
 !.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+!.mvn/wrapper/maven-wrapper.properties
 
-### ARCHIVOS DE SISTEMA Y LOGS ###
+### LOGS Y SISTEMA ###
 /logs/
 *.log
 *.tmp
 *.bak
-.DS_Store # Mac OS
-Thumbs.db # Windows
+.DS_Store    # Mac OS
+Thumbs.db    # Windows
+Desktop.ini  # Windows
 
-### ARCHIVOS DE CONFIGURACIÓN Y SECRETOS ###
+### SEGURIDAD Y CONFIGURACIÓN (CRÍTICO) ###
 *.env
-/src/main/resources/*.env
-/src/main/resources/*.key
-/src/main/resources/*.secret
-/src/main/resources/*.properties.local
-/src/main/resources/application-local.properties
+.env
+/secrets_store/     # <--- IMPORTANTÍSIMO: Aquí están tus contraseñas reales
+*.p12
+*.jks
 
+# Archivos de propiedades locales que no deben subirse
+/src/main/resources/application-local.properties
+/src/main/resources/*.secret
+/src/main/resources/*.key
+
+### DOCKER ###
+# Ignorar datos de DB si alguna vez usas volúmenes locales (bind mounts)
+postgres_data/
+mysql_data/
+mongo_data/
+
+### IDEs ###
 # IntelliJ IDEA
 .idea/
-!.idea/encodings.xml
-!.idea/vcs.xml
-!.idea/workspace.xml
 *.iws
 *.iml
 *.ipr
@@ -46,12 +54,10 @@ Thumbs.db # Windows
 .springBeans
 .sts4-cache
 
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
 # VS Code
 .vscode/
+
+### TESTS Y COBERTURA ###
+# Si usas JaCoCo para cobertura de código
+*.exec
+/coverage/

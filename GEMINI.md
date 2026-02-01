@@ -1,0 +1,3 @@
+# Guía de Uso de Gemini
+
+RECUERDA, SIEMPRE DEBES RESPONDER EN ESPAÑOL.

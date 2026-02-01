@@ -4,6 +4,8 @@ import com.eliasgonzalez.cartones.pdf.enums.EstadoEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Arrays;
+
 @Entity
 @Table(name = "PROCESOS_PDF")
 @AllArgsConstructor
@@ -31,4 +33,13 @@ public class PdfProcesos {
         this.estado = estadoEnum == null ? EstadoEnum.PENDIENTE.getValue() : estadoEnum;
     }
 
+    @Override
+    public String toString() {
+        return "PdfProcesos{" +
+                "procesoId='" + procesoId + '\'' +
+                ", estado='" + estado + '\'' +
+                ", pdfEtiquetas=" + Arrays.toString(pdfEtiquetas) +
+                ", pdfResumen=" + Arrays.toString(pdfResumen) +
+                '}';
+    }
 }

@@ -9,6 +9,7 @@ import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
 import com.eliasgonzalez.cartones.vendedor.interfaces.VendedorRepository;
 import com.eliasgonzalez.cartones.shared.util.Util;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,21 +22,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.multipart.support.MissingServletRequestPartException;
-
 /**
  * Servicio encargado de la orquestación (I/O) y persistencia de datos
  * desde un archivo Excel, aplicando un enfoque de "Todo o Nada".
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ExcelService implements IExcelService {
 
     private final VendedorRepository vendedorRepo;
     private final ExcelValidationService validationService;
-    private static final Logger logger = LoggerFactory.getLogger(ExcelService.class);
 
     @Override
     @Transactional // Si ocurre una RuntimeException, se revierte todo
@@ -43,11 +40,11 @@ public class ExcelService implements IExcelService {
 
         // PRE-VALIDACIÓN: Antes de tocar el InputStream
         if (file == null || file.isEmpty()) {
-            logger.error("El archivo recibido es nulo o está vacío.");
+            log.error("El archivo recibido es nulo o está vacío.");
             throw new ExcelProcessingException("El archivo recibido es nulo o está vacío.", List.of());
         }
 
-        logger.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
+        log.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
 
         List<String> erroresGlobales = new ArrayList<>();
         List<Vendedor> vendedoresParaGuardar = new ArrayList<>();
@@ -108,14 +105,14 @@ public class ExcelService implements IExcelService {
 
                 } catch (Exception e) {
                     String errorMessage = String.format("Fila %d: Error inesperado al procesar: %s", filaActual, e.getMessage());
-                    logger.error(errorMessage);
+                    log.error(errorMessage);
                     erroresGlobales.add(errorMessage);
                 }
             }
 
             // --- 3. DECISIÓN FINAL (TODO O NADA) ---
             if (!erroresGlobales.isEmpty()) {
-                logger.warn("Se detectaron {} errores. Abortando operación sin guardar nada.", erroresGlobales.size());
+                log.warn("Se detectaron {} errores. Abortando operación sin guardar nada.", erroresGlobales.size());
                 // Lanzar la excepción provoca el Rollback automático de la transacción
                 throw new ExcelProcessingException("El archivo Excel contiene errores. No se ha guardado ningún dato.", erroresGlobales);
             }
@@ -123,13 +120,13 @@ public class ExcelService implements IExcelService {
             // Si se llegó hasta acá, significa que NO hubo errores en ninguna fila
             if (!vendedoresParaGuardar.isEmpty()) {
                 vendedorRepo.saveAll(vendedoresParaGuardar);
-                logger.info("Se han guardado exitosamente {} registros.", vendedoresParaGuardar.size());
+                log.info("Se han guardado exitosamente {} registros.", vendedoresParaGuardar.size());
             }
 
         } catch (ExcelProcessingException | FileProcessingException e) {
             throw e; // Relanzar para que el GlobalExceptionHandler lo maneje
         } catch (Exception e) {
-            logger.error("Fallo crítico en el procesamiento del Excel", e);
+            log.error("Fallo crítico en el procesamiento del Excel", e);
             throw new RuntimeException("Error al procesar el archivo Excel: " + e.getMessage(), e);
         }
     }

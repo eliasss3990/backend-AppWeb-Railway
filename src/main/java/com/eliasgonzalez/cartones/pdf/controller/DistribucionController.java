@@ -6,6 +6,7 @@ import com.eliasgonzalez.cartones.pdf.service.GestionArchivoPdfService;
 import com.eliasgonzalez.cartones.pdf.service.GestionDistribucionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/distribuciones")
 @RequiredArgsConstructor
+@Slf4j
 @CrossOrigin(origins = "${app.cors.origins}")
 public class DistribucionController {
 
@@ -29,6 +31,8 @@ public class DistribucionController {
             @Valid @RequestBody SimulacionRequestDTO solicitud,
             @PathVariable String procesoId) {
 
+        log.info(solicitud.toString());
+        log.info("Iniciando simulación para el proceso ID: {}", procesoId);
         return ResponseEntity.ok(gestionDistribucion.procesarSimulacion(procesoId, solicitud));
     }
 
