@@ -3,6 +3,8 @@ package com.eliasgonzalez.cartones.pdf.entity;
 import com.eliasgonzalez.cartones.pdf.enums.EstadoEnum;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.Arrays;
 
@@ -22,11 +24,13 @@ public class PdfProcesos {
     private String estado = EstadoEnum.PENDIENTE.getValue();
 
     @Lob
-    @Column(columnDefinition = "BYTEA")
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "pdf_etiquetas")
     private byte[] pdfEtiquetas;
 
     @Lob
-    @Column(columnDefinition = "BYTEA")
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "pdf_resumen")
     private byte[] pdfResumen;
 
     public void setEstado(String estadoEnum) {
