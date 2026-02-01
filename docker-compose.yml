@@ -1,34 +1,30 @@
 services:
   # ==========================================
-  # 1. BASE DE DATOS (POSTGRES)
+  # 1. BASE DE DATOS
   # ==========================================
   db:
     image: postgres:16-alpine
     container_name: postgres_cartones_db
     restart: always
     environment:
-      POSTGRES_DB: cartones_db
-      # Postgres nativo: Le decimos que lea el usuario y pass de estos archivos
+      POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER_FILE: /run/secrets/db_user
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     ports:
-      # SEGURIDAD: Solo accesible desde localhost (tu máquina), no desde internet
-      - "127.0.0.1:2345:5432"
+      - "127.0.0.1:${PORT_DB}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     secrets:
       - db_user
       - db_password
     healthcheck:
-      # Verificamos salud leyendo el usuario del secreto
       test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/db_user)"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
   # ==========================================
-  # 2. BACKEND (SPRING BOOT)
+  # 2. BACKEND APP
   # ==========================================
   backend:
     build:
@@ -37,18 +33,29 @@ services:
     restart: always
     environment:
       SERVER_PORT: 9001
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/cartones_db
-      # Spring leerá cualquier archivo en esta ruta como una propiedad
+
+      # --- PERFIL ACTIVO (DEV/PROD) ---
+      SPRING_PROFILES_ACTIVE: ${APP_PROFILE}
+
+      # --- INYECCIÓN DE VARIABLES DEL .ENV ---
+      APP_DDL_AUTO: ${DB_DDL_AUTO}
+      APP_SHOW_SQL: ${DB_SHOW_SQL}
+      APP_LOG_LEVEL: ${LOG_LEVEL}
+      APP_OPEN_IN_VIEW: ${OPEN_IN_VIEW}
+      APP_CORS_ORIGINS: ${FRONTEND_URL}
+
+      # --- CONEXIÓN DB ---
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      # Importar secretos automáticamente como propiedades
       SPRING_CONFIG_IMPORT: "configtree:/run/secrets/"
-      # CORS
-      APP_CORS_ORIGINS: http://localhost:3000
+
     ports:
-      - "9001:9001"
+      - "${PORT_BACKEND}:9001"
     depends_on:
       db:
         condition: service_healthy
     secrets:
-      # Renombramos el archivo al montarlo para que coincida con la propiedad de Spring
+      # TRUCO: Montamos el archivo con el nombre de la propiedad de Spring
       - source: db_user
         target: spring.datasource.username
       - source: db_password
@@ -57,7 +64,6 @@ services:
 volumes:
   postgres_data:
 
-# Definición de dónde están los archivos en tu ordenador real
 secrets:
   db_user:
     file: ./secrets_store/db_user.txt

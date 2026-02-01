@@ -1,4 +1,6 @@
-### DEPENDENCIAS Y ARTEFACTOS DE BUILD ###
+# =================================================================
+# 1. ARTEFACTOS DE BUILD Y DEPENDENCIAS
+# =================================================================
 target/
 build/
 *.class
@@ -7,38 +9,47 @@ build/
 *.ear
 /bin/
 
-# Maven Wrapper (Mantenemos esto para que otros puedan compilar sin instalar Maven)
+# Maven Wrapper (IMPORTANTE: Esto SÍ se sube para que compile en cualquier lado)
 !.mvn/wrapper/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.properties
 
-### LOGS Y SISTEMA ###
+# =================================================================
+# 2. SISTEMA OPERATIVO Y LOGS
+# =================================================================
 /logs/
 *.log
 *.tmp
 *.bak
-.DS_Store    # Mac OS
+.DS_Store    # Mac
 Thumbs.db    # Windows
 Desktop.ini  # Windows
 
-### SEGURIDAD Y CONFIGURACIÓN (CRÍTICO) ###
-*.env
+# =================================================================
+# 3. SEGURIDAD Y SECRETOS (CRÍTICO)
+# =================================================================
+# Ignorar el archivo de configuración real
 .env
-/secrets_store/     # <--- IMPORTANTÍSIMO: Aquí están tus contraseñas reales
+*.env
+
+# Pero permitir la plantilla de ejemplo (para documentación)
+!.env.example
+
+# Ignorar la carpeta física de contraseñas de Docker
+/secrets_store/
+
+# Certificados y claves
 *.p12
 *.jks
+*.key
+*.pem
 
-# Archivos de propiedades locales que no deben subirse
+# Propiedades locales de desarrollador (si alguien crea una)
 /src/main/resources/application-local.properties
 /src/main/resources/*.secret
-/src/main/resources/*.key
 
-### DOCKER ###
-# Ignorar datos de DB si alguna vez usas volúmenes locales (bind mounts)
-postgres_data/
-mysql_data/
-mongo_data/
-
-### IDEs ###
+# =================================================================
+# 4. IDEs (ENTORNOS DE DESARROLLO)
+# =================================================================
 # IntelliJ IDEA
 .idea/
 *.iws
@@ -57,7 +68,16 @@ mongo_data/
 # VS Code
 .vscode/
 
-### TESTS Y COBERTURA ###
-# Si usas JaCoCo para cobertura de código
-*.exec
+# =================================================================
+# 5. DOCKER Y DATOS
+# =================================================================
+# Por si alguien usa volúmenes locales (bind mounts) por error
+postgres_data/
+mysql_data/
+mongo_data/
+
+# =================================================================
+# 6. TESTING
+# =================================================================
 /coverage/
+*.exec
