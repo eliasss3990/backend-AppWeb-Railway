@@ -83,3 +83,5 @@ mongo_data/
 *.exec
 /secrets_store/
 /secrets_store/
+/.env.dev
+/.env.prod

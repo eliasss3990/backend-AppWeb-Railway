@@ -1,7 +1,4 @@
 services:
-  # ==========================================
-  # 1. BASE DE DATOS
-  # ==========================================
   db:
     image: postgres:16-alpine
     container_name: postgres_cartones_db
@@ -15,17 +12,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     secrets:
-      - db_user
-      - db_password
+      - source: db_user
+        target: db_user
+        mode: 0444
+      - source: db_password
+        target: db_password
+        mode: 0444
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/db_user)"]
+      test: ["CMD-SHELL", "pg_isready -U $(cat /run/secrets/db_user) -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ==========================================
-  # 2. BACKEND APP
-  # ==========================================
   backend:
     build:
       context: .
@@ -33,20 +31,16 @@ services:
     restart: always
     environment:
       SERVER_PORT: 9001
-
-      # --- PERFIL ACTIVO (DEV/PROD) ---
       SPRING_PROFILES_ACTIVE: ${APP_PROFILE}
 
-      # --- INYECCIÓN DE VARIABLES DEL .ENV ---
+      # Variables inyectadas
       APP_DDL_AUTO: ${DB_DDL_AUTO}
       APP_SHOW_SQL: ${DB_SHOW_SQL}
       APP_LOG_LEVEL: ${LOG_LEVEL}
       APP_OPEN_IN_VIEW: ${OPEN_IN_VIEW}
       APP_CORS_ORIGINS: ${FRONTEND_URL}
 
-      # --- CONEXIÓN DB ---
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
-      # Importar secretos automáticamente como propiedades
       SPRING_CONFIG_IMPORT: "configtree:/run/secrets/"
 
     ports:
@@ -55,11 +49,12 @@ services:
       db:
         condition: service_healthy
     secrets:
-      # TRUCO: Montamos el archivo con el nombre de la propiedad de Spring
       - source: db_user
         target: spring.datasource.username
+        mode: 0444
       - source: db_password
         target: spring.datasource.password
+        mode: 0444
 
 volumes:
   postgres_data:
