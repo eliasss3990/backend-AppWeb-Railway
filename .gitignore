@@ -9,10 +9,6 @@ build/
 *.ear
 /bin/
 
-# Maven Wrapper (IMPORTANTE: Esto SÍ se sube para que compile en cualquier lado)
-!.mvn/wrapper/maven-wrapper.jar
-!.mvn/wrapper/maven-wrapper.properties
-
 # =================================================================
 # 2. SISTEMA OPERATIVO Y LOGS
 # =================================================================
@@ -28,7 +24,6 @@ Desktop.ini  # Windows
 # 3. SEGURIDAD Y SECRETOS (CRÍTICO)
 # =================================================================
 # Ignorar el archivo de configuración real
-.env
 *.env
 /.env.dev
 /.env.prod
@@ -36,8 +31,9 @@ Desktop.ini  # Windows
 # Pero permitir la plantilla de ejemplo (para documentación)
 !.env.example
 
-# Ignorar la carpeta física de contraseñas de Docker
-/secrets_store/
+# Ignorar archivos de secretos específicos
+/secrets_store/db_password.txt
+/secrets_store/db_user.txt
 
 # Certificados y claves
 *.p12
