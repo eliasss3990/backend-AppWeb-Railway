@@ -36,8 +36,9 @@ Desktop.ini  # Windows
 # Pero permitir la plantilla de ejemplo (para documentación)
 !.env.example
 
-# Ignorar la carpeta física de contraseñas de Docker
-/secrets_store/
+# Ignorar archivos de secretos específicos
+/secrets_store/db_password.txt
+/secrets_store/db_user.txt
 
 # Certificados y claves
 *.p12
