@@ -38,12 +38,6 @@ public class ExcelService implements IExcelService {
     @Transactional // Si ocurre una RuntimeException, se revierte todo
     public void leerExcel(MultipartFile file, String procesoIdCreado){
 
-        // PRE-VALIDACIÓN: Antes de tocar el InputStream
-        if (file == null || file.isEmpty()) {
-            log.error("El archivo recibido es nulo o está vacío.");
-            throw new ExcelProcessingException("El archivo recibido es nulo o está vacío.", List.of());
-        }
-
         log.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
 
         List<String> erroresGlobales = new ArrayList<>();
