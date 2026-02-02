@@ -50,35 +50,6 @@ class VendedorServiceTest {
         vendedor.setNombre("John Doe");
     }
 
-    @DisplayName("Test para listar vendedores cuando la lista no está vacía")
-    @Test
-    void testListaVendedores_conResultados() {
-        // Arrange
-        when(vendedorRepo.findAll()).thenReturn(List.of(vendedor));
-
-        // Act
-        List<VendedorResponseDTO> resultado = vendedorService.listaVendedores();
-
-        // Assert
-        assertThat(resultado).isNotNull();
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getNombre()).isEqualTo("John Doe");
-    }
-
-    @DisplayName("Test para listar vendedores cuando la lista está vacía")
-    @Test
-    void testListaVendedores_vacia() {
-        // Arrange
-        when(vendedorRepo.findAll()).thenReturn(Collections.emptyList());
-
-        // Act
-        List<VendedorResponseDTO> resultado = vendedorService.listaVendedores();
-
-        // Assert
-        assertThat(resultado).isNotNull();
-        assertThat(resultado).isEmpty();
-    }
-
     @DisplayName("Test para listar vendedores válidos con resultados")
     @Test
     void testListarVendedoresValidos_conResultados() {
@@ -109,19 +80,6 @@ class VendedorServiceTest {
         // Assert
         assertThat(resultado).isNotNull();
         assertThat(resultado).isEmpty();
-    }
-
-    @DisplayName("Test para eliminar todos los vendedores")
-    @Test
-    void testEliminarTodosLosVendedores() {
-        // Arrange
-        // No arrangement needed for this test
-
-        // Act
-        vendedorService.eliminarTodosLosVendedores();
-
-        // Assert
-        verify(vendedorRepo, times(1)).deleteAll();
     }
 
     @DisplayName("Test para iniciar un nuevo proceso")

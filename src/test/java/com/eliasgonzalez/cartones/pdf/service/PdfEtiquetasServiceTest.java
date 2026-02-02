@@ -1,7 +1,6 @@
 package com.eliasgonzalez.cartones.pdf.service;
 
 import com.eliasgonzalez.cartones.pdf.dto.EtiquetaDTO;
-import com.lowagie.text.DocumentException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,7 +8,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;

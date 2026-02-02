@@ -5,8 +5,7 @@ import com.eliasgonzalez.cartones.pdf.entity.PdfProcesos;
 import com.eliasgonzalez.cartones.pdf.enums.EstadoEnum;
 import com.eliasgonzalez.cartones.vendedor.entity.Vendedor;
 import com.eliasgonzalez.cartones.vendedor.interfaces.VendedorRepository;
-import com.eliasgonzalez.cartones.zip.ZipService; // Need to mock this static method
-import lombok.RequiredArgsConstructor;
+import com.eliasgonzalez.cartones.zip.ZipService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

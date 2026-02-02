@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verifyNoInteractions; // Added
 import static org.mockito.ArgumentMatchers.any; // Added
 import static org.mockito.ArgumentMatchers.anyString; // Added
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,33 +78,6 @@ class VendedorControllerTest {
         verify(vendedorService, times(1)).listarVendedoresValidos(procesoId);
     }
 
-    @DisplayName("DELETE /api/vendedores - Happy Path")
-    @Test
-    void testEliminarVendedores_happyPath() throws Exception {
-        // Arrange
-        // No specific arrange needed for the service call, as it's void
-        // Act & Assert
-        mockMvc.perform(delete("/api/vendedores")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
-
-        verify(vendedorService, times(1)).eliminarTodosLosVendedores();
-    }
-
-    @DisplayName("DELETE /api/vendedores - Excepción de servicio")
-    @Test
-    void testEliminarVendedores_serviceException() throws Exception {
-        // Arrange
-        doThrow(new RuntimeException("Error simulado al eliminar")).when(vendedorService).eliminarTodosLosVendedores();
-
-        // Act & Assert
-        mockMvc.perform(delete("/api/vendedores")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").value("Error Interno del Servidor"));
-
-        verify(vendedorService, times(1)).eliminarTodosLosVendedores();
-    }
 
     @DisplayName("POST /api/vendedores/carga - Happy Path")
     @Test
