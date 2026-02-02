@@ -48,6 +48,8 @@ public class ExcelService implements IExcelService {
 
             // --- 1. CONFIGURACIÓN INICIAL + EVALUADOR ---
             FormulaEvaluator evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            evaluator.clearAllCachedResultValues();
+            evaluator.evaluateAll();
 
             int sheetIndex = wb.getSheetIndex(ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue());
             if (sheetIndex < 0) {
