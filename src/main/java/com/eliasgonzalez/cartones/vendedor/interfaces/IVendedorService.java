@@ -12,9 +12,6 @@ public interface IVendedorService {
 
     List<VendedorResponseDTO> listarVendedoresValidos (String procesoIdRecibido);
 
-    // DELETE
-    void eliminarTodosLosVendedores ();
-
     // POST
     void procesarExcel(MultipartFile file, String procesoIdCreado);
 

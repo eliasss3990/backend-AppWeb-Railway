@@ -25,13 +25,6 @@ public class VendedorController {
         return ResponseEntity.ok(vendedorService.listarVendedoresValidos(procesoIdRecibido));
     }
 
-    @DeleteMapping()
-    public ResponseEntity<Void> eliminarVendedores() {
-
-        vendedorService.eliminarTodosLosVendedores();
-        return ResponseEntity.noContent().build();
-    }
-
     @PostMapping(value = "/carga", consumes = "multipart/form-data")
     public ResponseEntity<String> cargarVendedoresDesdeExcel(
             @RequestParam("file") MultipartFile file) {
