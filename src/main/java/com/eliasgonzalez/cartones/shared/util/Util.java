@@ -1,22 +1,13 @@
 package com.eliasgonzalez.cartones.shared.util;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import org.apache.poi.ss.usermodel.*;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.UUID;
 
 @AllArgsConstructor
-@Builder
 public class Util {
-
-    private String procesoId;
-
-    public String getProcesoId (){
-        return UUID.randomUUID().toString();
-    }
 
     public static String normalize(String s) {
         return s == null ? null : s.trim().toLowerCase().replaceAll("\\s+", "");
@@ -102,7 +93,4 @@ public class Util {
         return null;
     }
 
-    public static Integer getInicio (Integer finAnterior) { return finAnterior + 1; }
-
-    public static Integer getFin (Integer inicio, Integer cantidad) { return inicio + cantidad - 1; }
 }
