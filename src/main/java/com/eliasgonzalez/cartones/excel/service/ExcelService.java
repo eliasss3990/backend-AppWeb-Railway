@@ -118,7 +118,8 @@ public class ExcelService implements IExcelService {
             }
 
         } catch (ExcelProcessingException | FileProcessingException e) {
-            throw e; // Relanzar para que el GlobalExceptionHandler lo maneje
+            log.error("[INTERNO] Fallo en el procesamiento del Excel. Errores: {}. Mensaje: {}", erroresGlobales,e.getMessage());
+            throw e; // Re-lanzar la excepción para que GlobalExceptionHandler la capture
         } catch (Exception e) {
             log.error("Fallo crítico en el procesamiento del Excel", e);
             throw new RuntimeException("Error al procesar el archivo Excel: " + e.getMessage(), e);
