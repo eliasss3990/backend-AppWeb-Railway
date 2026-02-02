@@ -38,12 +38,6 @@ public class ExcelService implements IExcelService {
     @Transactional // Si ocurre una RuntimeException, se revierte todo
     public void leerExcel(MultipartFile file, String procesoIdCreado){
 
-        // PRE-VALIDACIÓN: Antes de tocar el InputStream
-        if (file == null || file.isEmpty()) {
-            log.error("El archivo recibido es nulo o está vacío.");
-            throw new ExcelProcessingException("El archivo recibido es nulo o está vacío.", List.of());
-        }
-
         log.info("Iniciando procesamiento del archivo Excel: {}", file.getOriginalFilename());
 
         List<String> erroresGlobales = new ArrayList<>();
@@ -54,6 +48,8 @@ public class ExcelService implements IExcelService {
 
             // --- 1. CONFIGURACIÓN INICIAL + EVALUADOR ---
             FormulaEvaluator evaluator = wb.getCreationHelper().createFormulaEvaluator();
+            evaluator.clearAllCachedResultValues();
+            evaluator.evaluateAll();
 
             int sheetIndex = wb.getSheetIndex(ExcelEnum.HOJA_SISTEMA_ETIQUETAS.getValue());
             if (sheetIndex < 0) {
@@ -124,7 +120,8 @@ public class ExcelService implements IExcelService {
             }
 
         } catch (ExcelProcessingException | FileProcessingException e) {
-            throw e; // Relanzar para que el GlobalExceptionHandler lo maneje
+            log.error("[INTERNO] Fallo en el procesamiento del Excel. Errores: {}. Mensaje: {}", erroresGlobales,e.getMessage());
+            throw e; // Re-lanzar la excepción para que GlobalExceptionHandler la capture
         } catch (Exception e) {
             log.error("Fallo crítico en el procesamiento del Excel", e);
             throw new RuntimeException("Error al procesar el archivo Excel: " + e.getMessage(), e);

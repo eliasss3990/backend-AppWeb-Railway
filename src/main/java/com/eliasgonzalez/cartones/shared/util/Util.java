@@ -1,22 +1,13 @@
 package com.eliasgonzalez.cartones.shared.util;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import org.apache.poi.ss.usermodel.*;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.UUID;
 
 @AllArgsConstructor
-@Builder
 public class Util {
-
-    private String procesoId;
-
-    public String getProcesoId (){
-        return UUID.randomUUID().toString();
-    }
 
     public static String normalize(String s) {
         return s == null ? null : s.trim().toLowerCase().replaceAll("\\s+", "");
@@ -53,29 +44,36 @@ public class Util {
 
         try {
             CellValue cellValue = evaluator.evaluate(c);
-            if (cellValue == null) return null;
 
+            // Si el RESULTADO de la evaluación es vacío, retornamos null
+            if (cellValue == null || cellValue.getCellType() == CellType.BLANK) return null;
+
+            // Procesamos según el tipo de dato resultante
             return switch (cellValue.getCellType()) {
-                case STRING -> cellValue.getStringValue().trim();
+                case STRING -> {
+                    String val = cellValue.getStringValue();
+                    // Si es un string vacío o solo espacios, lo tratamos como null
+                    yield (val == null || val.trim().isEmpty()) ? null : val.trim();
+                }
                 case NUMERIC -> {
                     if (DateUtil.isCellDateFormatted(c)) {
                         // Formateo de fecha
                         yield new SimpleDateFormat("yyyy/MM/dd").format(c.getDateCellValue());
                     }
-                    double val = cellValue.getNumberValue();
-                    // BigDecimal para limpiar la conversión de Double a String
-                    if (val == (long) val) {
-                        yield String.valueOf((long) val);
-                    } else {
-                        yield BigDecimal.valueOf(val).toPlainString(); // Evita notación científica 1.5E2
-                    }
+                    // Usamos BigDecimal para evitar notación científica (1.5E2)
+                    yield BigDecimal.valueOf(cellValue.getNumberValue())
+                            .stripTrailingZeros()
+                            .toPlainString();
                 }
                 case BOOLEAN -> String.valueOf(cellValue.getBooleanValue());
-                case ERROR -> "ERROR_CODIGO_" + cellValue.getErrorValue(); // Retornamos el error para que el validador lo detecte
+
+                // Manejo de errores de Excel (#REF!, #DIV/0!)
+                case ERROR -> "ERROR_EXCEL_" + FormulaError.forInt(cellValue.getErrorValue()).getString();
+
                 default -> null;
             };
         } catch (Exception e) {
-            return "ERROR_FORMULA"; // Retorno seguro en caso de fallo de POI
+            return "ERROR_PROCESAMIENTO_CELDA";
         }
     }
 
@@ -102,7 +100,4 @@ public class Util {
         return null;
     }
 
-    public static Integer getInicio (Integer finAnterior) { return finAnterior + 1; }
-
-    public static Integer getFin (Integer inicio, Integer cantidad) { return inicio + cantidad - 1; }
 }

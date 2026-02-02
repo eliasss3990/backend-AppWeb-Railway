@@ -8,12 +8,7 @@ import java.util.List;
 public interface IVendedorService {
 
     // GET
-    List<VendedorResponseDTO> listaVendedores ();
-
     List<VendedorResponseDTO> listarVendedoresValidos (String procesoIdRecibido);
-
-    // DELETE
-    void eliminarTodosLosVendedores ();
 
     // POST
     void procesarExcel(MultipartFile file, String procesoIdCreado);

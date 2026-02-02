@@ -1,8 +1,10 @@
 package com.eliasgonzalez.cartones.vendedor.controller;
 
+import com.eliasgonzalez.cartones.shared.exception.ExcelProcessingException;
 import com.eliasgonzalez.cartones.vendedor.dto.VendedorResponseDTO;
 import com.eliasgonzalez.cartones.vendedor.interfaces.IVendedorService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +14,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/vendedores")
+@Slf4j
 @CrossOrigin(origins = "${app.cors.origins}")
 public class VendedorController {
 
@@ -25,17 +28,15 @@ public class VendedorController {
         return ResponseEntity.ok(vendedorService.listarVendedoresValidos(procesoIdRecibido));
     }
 
-    @DeleteMapping()
-    public ResponseEntity<Void> eliminarVendedores() {
-
-        vendedorService.eliminarTodosLosVendedores();
-        return ResponseEntity.noContent().build();
-    }
-
     @PostMapping(value = "/carga", consumes = "multipart/form-data")
     public ResponseEntity<String> cargarVendedoresDesdeExcel(
             @RequestParam("file") MultipartFile file) {
 
+        // PRE-VALIDACIÓN: Antes de tocar el InputStream
+        if (file == null || file.isEmpty()) {
+            log.error("El archivo recibido es nulo o está vacío.");
+            throw new ExcelProcessingException("El archivo recibido es nulo o está vacío.", List.of());
+        }
 
         String procesoIdCreado = vendedorService.iniciarProceso();
         vendedorService.procesarExcel(file, procesoIdCreado);
