@@ -42,19 +42,23 @@ Si deseas correr el proyecto en tu máquina local:
     cd backend-AppWeb-Railway
     ```
 
-2.  **Configurar Base de Datos:**
-    Asegúrate de tener PostgreSQL corriendo localmente en el puerto `5432`.
-
-3.  **Configurar Variables (.env o IDE):**
-    Puedes duplicar el archivo `.env.example` y renombrarlo a `.env` con el siguiente comando.
+2.  **Configurar Variables (.env o IDE):**
+    Renombra el archivo `.env.example` a `.env` con el siguiente comando.
     ```bash
     cp .env.example .env
     ```
-    Luego, edítalo para ajustar las variables según el entorno que quieras usar.
+    Luego, edítalo para ajustar las variables para el entorno de desarrollo.
 
-4.  **Ejecutar:**
+3.  **Configurar los secretos:**
+    Ejecuta estos comandos y luego edita los archivos por un user y una password segura.
     ```bash
-    ./mvnw spring-boot:run
+    cp secrets_store/db_user.txt.example secrets_store/db_user.txt && 
+    cp secrets_store/db_password.txt.example secrets/db_password.txt
+    ```
+
+3.  **Levantar los servicios:**
+    ```bash
+    docker compose up -d --build
     ```
 
 ---
