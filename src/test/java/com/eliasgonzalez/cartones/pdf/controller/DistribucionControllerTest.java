@@ -15,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import com.eliasgonzalez.cartones.shared.exception.FileProcessingException;
 import java.time.LocalDate;
 import java.util.Arrays;

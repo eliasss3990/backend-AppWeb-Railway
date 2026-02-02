@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ExcelValidationServiceTest {
 
-    private ExcelValidationService validationService = new ExcelValidationService();
+    private final ExcelValidationService validationService = new ExcelValidationService();
 
     @DisplayName("Validación de DTO válido: sin errores esperados")
     @Test
