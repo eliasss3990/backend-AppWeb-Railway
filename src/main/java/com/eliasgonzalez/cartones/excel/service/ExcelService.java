@@ -83,7 +83,10 @@ public class ExcelService implements IExcelService {
                 Row row = sheet.getRow(i);
 
                 // Si la fila está vacía, se omite y se pasa al siguiente.
-                if (Util.isRowEmpty(row, vIdx, evaluator)) continue;
+                if (Util.isRowEmpty(row, vIdx, evaluator)) {
+                    log.warn("Se omite la fila {} porque el nombre del vendedor esta vacío. ProcesoId: {}", filaActual, procesoIdCreado);
+                    continue;
+                }
 
                 try {
                     // Mapeo al DTO
