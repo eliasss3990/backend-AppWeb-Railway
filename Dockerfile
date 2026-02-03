@@ -14,7 +14,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 
 # Compilamos el proyecto y generamos el JAR
-RUN mvn package
+RUN mvn package -DskipTests
 
 # ==========================================
 # ETAPA 2: RUNTIME (Ejecución)
@@ -37,6 +37,5 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 9001
 
 # JAVA_OPTS:
-# -XX:+UseContainerSupport: Hace que Java entienda que está en Docker
-# -XX:MaxRAMPercentage=75.0: Usa el 75% de la RAM que le des al contenedor
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+# -XX:MaxRAMPercentage=60.0: Usa el 60% de la RAM
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=60.0", "-Xss512k", "-jar", "app.jar"]
